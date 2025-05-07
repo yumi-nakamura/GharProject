@@ -62,4 +62,6 @@ src/
 - label="うんちを記録する"
 - label="かわいい瞬間を記録"
 
+**ライブラリ
+- [アイコン用　lucide](https://lucide.dev/icons/)
 
