@@ -4,6 +4,8 @@ import { createClient } from "@/utils/supabase/server"
 import EntryForm from "@/components/otayori/EntryForm"
 
 export default async function OtayoriNewPage() {
+  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const type = searchParams?.get("type") || undefined;
   const supabase = await createClient()
   const { data } = await supabase.auth.getUser()
   if (!data?.user) {

@@ -2,6 +2,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
+import Link from "next/link"
 
 const supabase = createClient()
 
@@ -42,10 +43,10 @@ export function Navbar() {
 
   return (
     <header className="flex items-center justify-between px-4 py-2 border-b shadow-sm bg-white">
-      <div className="flex items-center space-x-2">
+      <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition">
         <img src="/images/logo.png" alt="OTAYORI" className="h-6 w-6" />
         <span className="font-bold text-lg">OTAYORI</span>
-      </div>
+      </Link>
       <div className="flex items-center space-x-2">
         {email ? (
           <>

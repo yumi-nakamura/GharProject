@@ -1,11 +1,26 @@
 "use client"
 // 2. layout/FooterNav.tsx
-import { type ReactElement } from "react"
+import { type ReactElement, useEffect, useState } from "react"
 import { Home, PawPrint, Camera, Bell, Settings } from "lucide-react"
 import { useProfileStatus } from "@/components/layout/ProfileStatusProvider"
+import { createClient } from "@/utils/supabase/client"
 
 export function FooterNav() {
   const { hasDogProfile, loading } = useProfileStatus()
+  const [dogId, setDogId] = useState<string | null>(null)
+  useEffect(() => {
+    const supabase = createClient()
+    async function fetchDogId() {
+      const { data: userData } = await supabase.auth.getUser()
+      const userId = userData?.user?.id
+      if (!userId) return
+      const { data: dogs } = await supabase.from("dogs").select("id").eq("owner_id", userId)
+      if (dogs && dogs.length > 0) {
+        setDogId(dogs[0].id)
+      }
+    }
+    fetchDogId()
+  }, [])
   // ローディング中は何も描画しない
   if (loading) return null
   const disabled = !hasDogProfile
@@ -13,7 +28,7 @@ export function FooterNav() {
   return (
     <nav className="fixed bottom-0 w-full bg-white border-t flex justify-around items-end py-2 z-50">
       <NavIcon icon={<Home />} href="/" disabled={disabled} tooltip={tooltip} />
-      <NavIcon icon={<PawPrint />} href="/dog/1" disabled={disabled} tooltip={tooltip} />
+      <NavIcon icon={<PawPrint />} href={dogId ? `/dog/${dogId}/timeline` : "/dog/1"} disabled={disabled} tooltip={tooltip} />
       <NavIcon icon={<Camera />} href="/otayori/new" highlight disabled={disabled} tooltip={tooltip} />
       <NavIcon icon={<Bell />} href="/notifications" disabled={disabled} tooltip={tooltip} />
       <NavIcon icon={<Settings />} href="/settings" disabled={disabled} tooltip={tooltip} />

@@ -8,4 +8,6 @@ export interface OtayoriRecord {
   content: string
   datetime: string
   photoUrl: string
+  mood?: string
+  tags?: string[]
 } 
