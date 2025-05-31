@@ -58,7 +58,11 @@ export function Navbar() {
             <button onClick={handleSignOut} className="ml-2 text-xs text-orange-500 border border-orange-400 rounded px-2 py-1 hover:bg-orange-50">サインアウト</button>
           </>
         ) : (
-          <span className="text-sm text-gray-400">未ログイン</span>
+          <>
+            <span className="text-sm text-gray-400">未ログイン</span>
+            <a href="/login" className="ml-2 text-xs text-blue-500 border border-blue-400 rounded px-2 py-1 hover:bg-blue-50">ログイン</a>
+            <a href="/signup" className="ml-2 text-xs text-green-500 border border-green-400 rounded px-2 py-1 hover:bg-green-50">サインアップ</a>
+          </>
         )}
       </div>
     </header>

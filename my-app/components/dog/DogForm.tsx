@@ -55,6 +55,22 @@ export default function DogForm({ onComplete }: { onComplete?: () => void }) {
     if (error) {
       setMessage("登録に失敗しました: " + error.message)
     } else {
+      // 直近で登録した犬を取得（owner_idとnameで絞る）
+      const { data: dogs } = await supabase
+        .from("dogs")
+        .select("id")
+        .eq("owner_id", userId)
+        .eq("name", name)
+        .order("created_at", { ascending: false })
+        .limit(1)
+      const dogId = dogs && dogs[0]?.id
+      if (dogId) {
+        const { error: relationError } = await supabase.from("dog_user_relations").insert({ dog_id: dogId, user_id: userId })
+        if (relationError) {
+          setMessage("犬とユーザーの紐付けに失敗しました: " + relationError.message)
+          return
+        }
+      }
       setMessage("犬のプロフィールを登録しました")
       onComplete?.()
     }
