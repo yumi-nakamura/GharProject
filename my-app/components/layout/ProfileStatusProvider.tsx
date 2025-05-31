@@ -9,8 +9,8 @@ export function ProfileStatusProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const supabase = createClient()
     async function fetchDogProfile() {
-      const supabase = createClient()
       const { data: userData } = await supabase.auth.getUser()
       const userId = userData?.user?.id
       if (!userId) {
@@ -23,6 +23,14 @@ export function ProfileStatusProvider({ children }: { children: ReactNode }) {
       setLoading(false)
     }
     fetchDogProfile()
+    // 認証状態が変わったら再取得
+    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+      setLoading(true)
+      fetchDogProfile()
+    })
+    return () => {
+      listener?.subscription.unsubscribe()
+    }
   }, [])
 
   return (

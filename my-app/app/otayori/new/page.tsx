@@ -16,6 +16,8 @@ export default async function OtayoriNewPage() {
   }
   // ひとまず最初の犬を使う
   const dog = dogs[0]
+  // ユーザーIDと犬IDをコンソールに表示
+  console.log('userId:', data.user.id, 'dogId:', dog.id)
   return (
     <main className="p-4">
       <EntryForm dogId={dog.id} birthday={dog.birthday || ""} />

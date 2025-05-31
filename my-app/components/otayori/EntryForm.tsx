@@ -23,6 +23,7 @@ export default function EntryForm({ dogId, birthday }: { dogId: string; birthday
     setLoading(true)
 
     const { data: userData, error: userError } = await supabase.auth.getUser()
+    console.log('supabase.auth.getUser()', { userData, userError })
     const userId = userData?.user?.id
     if (!userId) {
       alert("ログインが必要です。先にログインしてください。")
@@ -53,16 +54,20 @@ export default function EntryForm({ dogId, birthday }: { dogId: string; birthday
     }
     // DBカラム名に変換（idを含めない）
     const dbRecord = {
-      dog_id: record.dogId,
-      user_id: record.userId,
-      type: record.type,
-      content: record.content,
-      datetime: record.datetime,
-      photo_url: record.photoUrl,
+      dog_id: dogId,
+      user_id: userId,
+      type,
+      content,
+      datetime,
+      photo_url: path,
     }
+    // デバッグ用出力
+    console.log({ dogId, userId })
     const { error } = await supabase.from('otayori').insert(dbRecord)
-    if (error) alert('投稿に失敗しました: ' + error.message)
-    else if (type === 'poop') setShowAnimation(true)
+    if (error) {
+      alert('投稿に失敗しました: ' + error.message)
+      console.error('投稿エラー詳細:', error)
+    } else if (type === 'poop') setShowAnimation(true)
     setLoading(false)
   }
 
