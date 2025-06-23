@@ -3,7 +3,8 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/utils/supabase/server"
 import { DogTimeline } from "@/components/otayori/DogTimeline"
 
-export default async function DogTimelinePage({ params }: { params: { id: string } }) {
+export default async function DogTimelinePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const supabase = await createClient()
   const { data } = await supabase.auth.getUser()
   if (!data?.user) {
@@ -11,7 +12,7 @@ export default async function DogTimelinePage({ params }: { params: { id: string
   }
   
   // dogIdから犬情報を取得
-  const { data: dog } = await supabase.from("dogs").select("birthday").eq("id", params.id).single()
+  const { data: dog } = await supabase.from("dogs").select("birthday").eq("id", id).single()
   if (!dog) {
     redirect("/dog/register")
   }
@@ -23,7 +24,7 @@ export default async function DogTimelinePage({ params }: { params: { id: string
           <h1 className="text-3xl font-bold text-gray-800 mb-2">タイムライン</h1>
           <p className="text-gray-600">愛犬との思い出を振り返りましょう</p>
         </div>
-        <DogTimeline dogId={params.id} birthday={dog.birthday || ""} />
+        <DogTimeline dogId={id} birthday={dog.birthday || ""} />
       </div>
     </div>
   )

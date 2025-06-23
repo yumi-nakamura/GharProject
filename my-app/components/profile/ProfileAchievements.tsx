@@ -1,6 +1,6 @@
 "use client"
 
-import type { UserStats } from "@/types/user"
+import type { UserStats, UserProfile } from "@/types/user"
 import { Trophy, Star, Heart, Camera, Calendar, Award, PawPrint, Target } from "lucide-react"
 
 interface Achievement {
@@ -14,10 +14,11 @@ interface Achievement {
 }
 
 interface ProfileAchievementsProps {
+  user: UserProfile
   userStats?: UserStats
 }
 
-export function ProfileAchievements({ userStats }: ProfileAchievementsProps) {
+export function ProfileAchievements({ user, userStats }: ProfileAchievementsProps) {
   // 実績の定義
   const achievements: Achievement[] = [
     {
