@@ -8,7 +8,7 @@ import { ProfileTimeline } from "@/components/profile/ProfileTimeline"
 import { UserCard } from "@/components/profile/UserCard"
 import type { UserProfile, UserStats } from "@/types/user"
 import { calculateUserStats } from "@/utils/userStats"
-import { User, Trophy, Clock, Heart, PawPrint, Star, Calendar, Target } from "lucide-react"
+import { Trophy, Clock, Heart, PawPrint, Star, Calendar } from "lucide-react"
 
 const supabase = createClient()
 
@@ -135,7 +135,7 @@ export default function ProfilePage() {
       }
 
       // 更新データを準備（カラム名を明示的に指定）
-      const updateData: any = {}
+      const updateData: Partial<UserProfile> = {}
       if (updated.name !== undefined) updateData.name = updated.name
       if (updated.email !== undefined) updateData.email = updated.email
       if (updated.avatar_url !== undefined) updateData.avatar_url = updated.avatar_url

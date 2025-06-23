@@ -1,24 +1,21 @@
 // app/settings/page.tsx
 "use client"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { createClient } from "@/utils/supabase/client"
-import { ReminderSettings } from "@/components/settings/ReminderSettings"
-import type { ReminderSettingsData } from "@/types/settings"
-import type { DogProfile } from "@/types/dog"
-import { useRouter } from "next/navigation"
 import { DogListItem } from "@/components/settings/DogListItem"
 import Link from 'next/link'
 import { PlusCircle } from 'lucide-react'
+import { useRouter } from "next/navigation"
+import { DogProfile } from "@/types/dog"
 
 const supabase = createClient()
 
 export default function SettingsPage() {
-  const [reminders, setReminders] = useState<ReminderSettingsData>({ meal: true, poop: true, mood: false })
   const [dogs, setDogs] = useState<DogProfile[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  const fetchDogs = async () => {
+  const fetchDogs = useCallback(async () => {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -27,8 +24,7 @@ export default function SettingsPage() {
     }
 
     // リマインダー設定を取得
-    const { data: reminderData } = await supabase.from("reminders").select("meal, poop, mood").eq("user_id", user.id).single()
-    if (reminderData) setReminders(reminderData)
+    // const { data: reminderData } = await supabase.from("reminders").select("meal, poop, mood").eq("user_id", user.id).single()
 
     // ----------------- 犬の情報の取得ロジックを修正 -----------------
 
@@ -61,22 +57,11 @@ export default function SettingsPage() {
     }
     setLoading(false)
     // ----------------------------------------------------------------
-  }
+  }, [router])
 
   useEffect(() => {
     fetchDogs()
-  }, [router])
-
-  const handleChange = async (key: keyof ReminderSettingsData, value: boolean) => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    await supabase.from("reminders").upsert({
-      user_id: user.id,
-      ...reminders,
-      [key]: value,
-    })
-    setReminders(prev => ({ ...prev, [key]: value }))
-  }
+  }, [fetchDogs])
 
   const handleDogDelete = () => {
     // 犬が削除されたら、リストを再取得

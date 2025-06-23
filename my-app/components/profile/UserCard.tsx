@@ -3,8 +3,8 @@ import type { UserProfile } from "@/types/user"
 import { User, Heart, Calendar } from "lucide-react"
 
 export function UserCard({ user }: { user: UserProfile }) {
-  const hasAvatar = user.avatarUrl && user.avatarUrl.trim() !== ""
-  const isBase64 = hasAvatar && user.avatarUrl!.startsWith('data:image')
+  const hasAvatar = user.avatar_url && user.avatar_url.trim() !== ""
+  const isBase64 = hasAvatar && user.avatar_url!.startsWith('data:image')
   
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-orange-100">
@@ -13,7 +13,7 @@ export function UserCard({ user }: { user: UserProfile }) {
         <div className="relative mx-auto mb-4">
           {hasAvatar ? (
             <img 
-              src={user.avatarUrl} 
+              src={user.avatar_url} 
               alt={user.name} 
               className="w-20 h-20 rounded-full object-cover border-4 border-orange-200 shadow-lg"
               onError={(e) => {
@@ -37,7 +37,7 @@ export function UserCard({ user }: { user: UserProfile }) {
           <p className="text-sm text-gray-600 mb-2">{user.email}</p>
           {user.comment && (
             <div className="bg-gradient-to-r from-orange-50 to-pink-50 rounded-lg p-3">
-              <p className="text-sm text-gray-700 italic">"{user.comment}"</p>
+              <p className="text-sm text-gray-700 italic">&quot;{user.comment}&quot;</p>
             </div>
           )}
         </div>
@@ -46,7 +46,7 @@ export function UserCard({ user }: { user: UserProfile }) {
         <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
           <Calendar size={14} />
           <span>
-            登録日: {user.createdAt ? new Date(user.createdAt).toLocaleDateString('ja-JP') : '不明'}
+            登録日: {user.created_at ? new Date(user.created_at).toLocaleDateString('ja-JP') : '不明'}
           </span>
         </div>
 

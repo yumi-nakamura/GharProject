@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
-import { Camera, Salad, Bubbles, MessageCircleHeart, PawPrint, ChevronLeft, ChevronRight, Send, Loader2, Bone, Droplet, Heart, Lock, Shield, Calendar, Tag } from 'lucide-react'
+import { Camera, ChevronLeft, ChevronRight, Send, Loader2, Bone, Droplet, Heart, Lock, Shield, Tag } from 'lucide-react'
 import type { DogProfile } from '@/types/dog'
 import TagSelector from '@/components/common/TagSelector'
 import DateTimePicker from '@/components/common/DateTimePicker'
@@ -176,7 +176,7 @@ export default function OtayoriEntryForm() {
     }
 
     // 投稿データを準備
-    const postData: any = {
+    const postData: Record<string, unknown> = {
       dog_id: selectedDog.id,
       user_id: user.id,
       type,

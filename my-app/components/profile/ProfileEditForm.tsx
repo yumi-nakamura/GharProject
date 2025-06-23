@@ -172,7 +172,7 @@ export function ProfileEditForm({ user, onSave }: { user: UserProfile; onSave: (
               </div>
               <div className="flex-1">
                 <div className="text-sm text-gray-600 mb-1">ひとことコメント</div>
-                <div className="text-gray-800 italic">"{comment}"</div>
+                <div className="text-gray-800 italic">&quot;{comment}&quot;</div>
               </div>
             </div>
           )}

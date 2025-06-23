@@ -112,19 +112,6 @@ export function ProfileTimeline() {
     }
   }
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'meal':
-        return 'bg-green-100 text-green-600'
-      case 'poop':
-        return 'bg-brown-100 text-brown-600'
-      case 'emotion':
-        return 'bg-pink-100 text-pink-600'
-      default:
-        return 'bg-blue-100 text-blue-600'
-    }
-  }
-
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-8">

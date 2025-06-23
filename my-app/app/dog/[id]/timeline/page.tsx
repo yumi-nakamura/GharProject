@@ -11,7 +11,7 @@ export default async function DogTimelinePage({ params }: { params: { id: string
   }
   
   // dogIdから犬情報を取得
-  const { data: dog, error } = await supabase.from("dogs").select("birthday").eq("id", params.id).single()
+  const { data: dog } = await supabase.from("dogs").select("birthday").eq("id", params.id).single()
   if (!dog) {
     redirect("/dog/register")
   }

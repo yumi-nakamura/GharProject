@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, ChangeEvent } from "react"
-import { Lock, Shield, Eye, AlertCircle, Gift } from "lucide-react"
+import { Lock, Eye, AlertCircle, Gift } from "lucide-react"
 
 export default function PoopImageGuard({
   imageUrl,

@@ -1,24 +1,22 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/utils/supabase/client"
 import type { DogProfile } from "@/types/dog"
-import { 
-  BarChart3, 
-  Activity, 
-  TrendingUp, 
-  AlertTriangle, 
-  Heart, 
-  Bone, 
-  Bubbles, 
+import {
   Calendar,
+  TrendingUp,
+  Heart,
+  Activity,
   Clock,
   Target,
   Award,
   Eye,
   Brain,
-  Shield,
-  Zap
+  Bone,
+  Bubbles,
+  BarChart3,
+  AlertTriangle
 } from "lucide-react"
 import Link from "next/link"
 
@@ -38,15 +36,14 @@ interface HealthData {
   alerts: string[]
 }
 
-interface DogHealthStats {
-  totalPosts: number
-  mealCount: number
-  poopCount: number
-  emotionCount: number
-  streakDays: number
-  lastPostDate: string | null
-  averagePostsPerDay: number
-  healthTrend: 'improving' | 'stable' | 'declining'
+interface OtayoriPost {
+  id: string
+  type: string
+  datetime: string
+  content?: string
+  image_url?: string
+  tags?: string[]
+  [key: string]: any
 }
 
 export default function HealthReportPage() {
@@ -56,6 +53,42 @@ export default function HealthReportPage() {
   const [loading, setLoading] = useState(true)
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter'>('week')
 
+  const fetchHealthData = useCallback(async (dogId: string, period: 'week' | 'month' | 'quarter') => {
+    try {
+      const now = new Date()
+      let startDate: Date
+
+      switch (period) {
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+          break
+        case 'month':
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+          break
+        case 'quarter':
+          startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
+          break
+      }
+
+      const { data: posts, error } = await supabase
+        .from('otayori')
+        .select('*')
+        .eq('dog_id', dogId)
+        .gte('datetime', startDate.toISOString())
+        .order('datetime', { ascending: true })
+
+      if (error) {
+        console.error('健康データ取得エラー:', error)
+        return
+      }
+
+      const healthData = analyzeHealthData(posts || [], period)
+      setHealthData(healthData)
+    } catch (error) {
+      console.error('健康データ取得エラー:', error)
+    }
+  }, [])
+
   useEffect(() => {
     fetchDogs()
   }, [])
@@ -64,7 +97,7 @@ export default function HealthReportPage() {
     if (selectedDog) {
       fetchHealthData(selectedDog.id, selectedPeriod)
     }
-  }, [selectedDog, selectedPeriod])
+  }, [selectedDog, selectedPeriod, fetchHealthData])
 
   const fetchDogs = async () => {
     try {
@@ -105,43 +138,7 @@ export default function HealthReportPage() {
     }
   }
 
-  const fetchHealthData = async (dogId: string, period: 'week' | 'month' | 'quarter') => {
-    try {
-      const now = new Date()
-      let startDate: Date
-
-      switch (period) {
-        case 'week':
-          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-          break
-        case 'month':
-          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-          break
-        case 'quarter':
-          startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
-          break
-      }
-
-      const { data: posts, error } = await supabase
-        .from('otayori')
-        .select('*')
-        .eq('dog_id', dogId)
-        .gte('datetime', startDate.toISOString())
-        .order('datetime', { ascending: true })
-
-      if (error) {
-        console.error('健康データ取得エラー:', error)
-        return
-      }
-
-      const healthData = analyzeHealthData(posts || [], period)
-      setHealthData(healthData)
-    } catch (error) {
-      console.error('健康データ取得エラー:', error)
-    }
-  }
-
-  const analyzeHealthData = (posts: any[], period: string): HealthData => {
+  const analyzeHealthData = useCallback((posts: OtayoriPost[], period: string): HealthData => {
     const mealPosts = posts.filter(post => post.type === 'meal')
     const poopPosts = posts.filter(post => post.type === 'poop')
     const emotionPosts = posts.filter(post => post.type === 'emotion')
@@ -183,9 +180,9 @@ export default function HealthReportPage() {
       recommendations,
       alerts
     }
-  }
+  }, [])
 
-  const generateRecommendations = (mealPosts: any[], poopPosts: any[], emotionPosts: any[], avgMeals: number, avgPoops: number): string[] => {
+  const generateRecommendations = (mealPosts: OtayoriPost[], poopPosts: OtayoriPost[], emotionPosts: OtayoriPost[], avgMeals: number, avgPoops: number): string[] => {
     const recommendations = []
 
     if (avgMeals < 1) {
@@ -204,7 +201,7 @@ export default function HealthReportPage() {
     return recommendations
   }
 
-  const generateAlerts = (mealPosts: any[], poopPosts: any[], emotionPosts: any[], avgMeals: number, avgPoops: number): string[] => {
+  const generateAlerts = (mealPosts: OtayoriPost[], poopPosts: OtayoriPost[], emotionPosts: OtayoriPost[], avgMeals: number, avgPoops: number): string[] => {
     const alerts = []
 
     if (avgMeals > 5) {
@@ -213,36 +210,33 @@ export default function HealthReportPage() {
     if (avgPoops > 6) {
       alerts.push("排泄回数が多すぎる可能性があります")
     }
-    if (mealPosts.length === 0 && poopPosts.length === 0) {
-      alerts.push("記録が不足しています。健康状態の把握のため記録を追加してください")
-    }
 
     return alerts
   }
 
-  const analyzeMoodTrend = (emotionPosts: any[]): string => {
+  const analyzeMoodTrend = (emotionPosts: OtayoriPost[]): string => {
     if (emotionPosts.length === 0) return "データ不足"
     
-    // 簡易的な気分分析（実際の実装ではより詳細な分析が必要）
-    const positiveKeywords = ['元気', '楽しい', '嬉しい', '満足']
-    const negativeKeywords = ['悲しい', '不安', '痛い', '疲れ']
+    // 簡易的な感情分析（実際の実装ではより詳細な分析が必要）
+    const positiveEmotions = emotionPosts.filter(post => 
+      post.content?.includes('楽しい') || 
+      post.content?.includes('嬉しい') || 
+      post.content?.includes('元気')
+    )
     
-    let positiveCount = 0
-    let negativeCount = 0
+    const negativeEmotions = emotionPosts.filter(post => 
+      post.content?.includes('悲しい') || 
+      post.content?.includes('心配') || 
+      post.content?.includes('疲れ')
+    )
     
-    emotionPosts.forEach(post => {
-      const content = post.content?.toLowerCase() || ''
-      positiveKeywords.forEach(keyword => {
-        if (content.includes(keyword)) positiveCount++
-      })
-      negativeKeywords.forEach(keyword => {
-        if (content.includes(keyword)) negativeCount++
-      })
-    })
-    
-    if (positiveCount > negativeCount) return "良好"
-    if (negativeCount > positiveCount) return "注意が必要"
-    return "安定"
+    if (positiveEmotions.length > negativeEmotions.length) {
+      return "良好"
+    } else if (negativeEmotions.length > positiveEmotions.length) {
+      return "注意が必要"
+    } else {
+      return "安定"
+    }
   }
 
   if (loading) {
@@ -303,7 +297,7 @@ export default function HealthReportPage() {
               </div>
             </div>
             <div className="flex gap-2">
-              {dogs.map((dog, index) => (
+              {dogs.map((dog) => (
                 <button
                   key={dog.id}
                   onClick={() => setSelectedDog(dog)}
