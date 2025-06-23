@@ -219,7 +219,7 @@ export default function ProfilePage() {
         {/* ヘッダー */}
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center justify-center gap-3">
-            オーナー ダッシュボード
+            OTAYORI profile
           </h1>
           <p className="text-gray-600 mb-4">あなたの愛犬との思い出を振り返ってみましょう</p>
           

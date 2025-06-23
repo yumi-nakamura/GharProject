@@ -1,5 +1,7 @@
 // utils/otayoriHelpers.ts
 
+import { createClient } from '@/utils/supabase/client'
+
 /**
  * Supabase Storage上の画像URLを生成する
  * @param path - ストレージ内のファイルパス
@@ -34,3 +36,64 @@ export function generatePasswordFromBirthday(birthday: string): string {
 export function formatDogDisplayName(name: string, breed?: string): string {
   return breed ? `${name}（${breed}）` : name
 }
+
+// いいね機能のヘルパー関数
+export const toggleLike = async (otayoriId: string, userId: string) => {
+  const supabase = createClient();
+  
+  // 既存のいいねをチェック
+  const { data: existingLike } = await supabase
+    .from('likes')
+    .select('id')
+    .eq('otayori_id', otayoriId)
+    .eq('user_id', userId)
+    .single();
+
+  if (existingLike) {
+    // いいねを削除
+    const { error } = await supabase
+      .from('likes')
+      .delete()
+      .eq('id', existingLike.id);
+    
+    if (error) throw error;
+    return { liked: false };
+  } else {
+    // いいねを追加
+    const { error } = await supabase
+      .from('likes')
+      .insert({
+        otayori_id: otayoriId,
+        user_id: userId
+      });
+    
+    if (error) throw error;
+    return { liked: true };
+  }
+};
+
+export const getLikesCount = async (otayoriId: string) => {
+  const supabase = createClient();
+  
+  const { count, error } = await supabase
+    .from('likes')
+    .select('*', { count: 'exact', head: true })
+    .eq('otayori_id', otayoriId);
+  
+  if (error) throw error;
+  return count || 0;
+};
+
+export const checkUserLiked = async (otayoriId: string, userId: string) => {
+  const supabase = createClient();
+  
+  const { data, error } = await supabase
+    .from('likes')
+    .select('id')
+    .eq('otayori_id', otayoriId)
+    .eq('user_id', userId)
+    .single();
+  
+  if (error && error.code !== 'PGRST116') throw error; // PGRST116はレコードが見つからない場合
+  return !!data;
+};
