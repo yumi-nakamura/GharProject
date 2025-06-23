@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
-import { ChevronLeft, ChevronRight, Heart, BarChart2, MessageSquare, Bone, Bubbles, Activity, Plus, Clock, Shield, Users, Zap, Award, Star, HeartPulse, PawPrint, LayoutDashboard, Dog } from "lucide-react"
+import { ChevronLeft, ChevronRight, Heart, Bone, Bubbles, Activity, Plus, Shield, Users, Zap, Award, Star, HeartPulse, PawPrint, LayoutDashboard, Dog } from "lucide-react"
 import Link from "next/link"
 
 const supabase = createClient()
