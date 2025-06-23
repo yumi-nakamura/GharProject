@@ -34,7 +34,6 @@ export default function AuthCallbackPage() {
       }
     }
     checkProfile()
-    // eslint-disable-next-line
   }, [router])
 
   return <p className="p-4">ログイン処理中です...</p>

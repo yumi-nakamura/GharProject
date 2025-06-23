@@ -43,7 +43,7 @@ interface OtayoriPost {
   content?: string
   image_url?: string
   tags?: string[]
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export default function HealthReportPage() {
@@ -328,7 +328,7 @@ export default function HealthReportPage() {
             ].map((period) => (
               <button
                 key={period.key}
-                onClick={() => setSelectedPeriod(period.key as any)}
+                onClick={() => setSelectedPeriod(period.key as 'week' | 'month' | 'quarter')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                   selectedPeriod === period.key
                     ? 'bg-blue-500 text-white'

@@ -9,7 +9,7 @@ import { ArrowLeft } from 'lucide-react'
 
 const supabase = createClient()
 
-export default function EditDogPage({ params }: { params: { id: string } }) {
+export default function EditDogPage({ params }: { params: Promise<{ id: string }> }) {
   const [dog, setDog] = useState<DogProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -18,10 +18,11 @@ export default function EditDogPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     const fetchDog = async () => {
       setLoading(true)
+      const { id } = await params
       const { data, error } = await supabase
         .from('dogs')
         .select('*')
-        .eq('id', params.id)
+        .eq('id', id)
         .single()
 
       if (error) {
@@ -34,10 +35,8 @@ export default function EditDogPage({ params }: { params: { id: string } }) {
       setLoading(false)
     }
 
-    if (params.id) {
-      fetchDog()
-    }
-  }, [params.id])
+    fetchDog()
+  }, [params])
 
   const handleComplete = () => {
     router.push('/settings')
