@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
-import { Camera, ChevronLeft, ChevronRight, Send, Loader2, Bone, Droplet, Heart, Lock, Shield, Tag } from 'lucide-react'
+import { Camera, ChevronLeft, ChevronRight, Send, Loader2, Bone, Bubbles, Heart, Lock, Shield, Tag } from 'lucide-react'
 import type { DogProfile } from '@/types/dog'
 import TagSelector from '@/components/common/TagSelector'
 import DateTimePicker from '@/components/common/DateTimePicker'
@@ -217,7 +217,7 @@ export default function OtayoriEntryForm() {
   
   const typeOptions = [
     { id: 'meal', label: 'ごはん', icon: <Bone size={24} /> },
-    { id: 'poop', label: 'うんち', icon: <Droplet size={24} /> },
+    { id: 'poop', label: 'うんち', icon: <Bubbles size={24} /> },
     { id: 'emotion', label: 'きもち', icon: <Heart size={24} /> },
   ] as const;
 

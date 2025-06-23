@@ -15,6 +15,13 @@ export interface OtayoriRecord {
   customDatetime?: string
 }
 
+export interface Like {
+  id: string;
+  user_id: string;
+  otayori_id: string;
+  created_at: string;
+}
+
 // 投稿タイプ別のタグオプション
 export const TAG_OPTIONS = {
   meal: [
