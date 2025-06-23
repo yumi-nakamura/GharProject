@@ -24,3 +24,29 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* プープバッグのアニメーション */
+@keyframes gift-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes gift-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+.animate-gift-bounce {
+  animation: gift-bounce 2s ease-in-out infinite;
+}
+
+.animate-gift-shake {
+  animation: gift-shake 0.5s ease-in-out;
+}
+
+/* プープバッグのホバーエフェクト */
+.gift-hover:hover {
+  transform: scale(1.02);
+  transition: transform 0.2s ease-in-out;
+}

@@ -10,4 +10,23 @@ export interface OtayoriRecord {
   photoUrl: string
   mood?: string
   tags?: string[]
-} 
+  poopGuardPassword?: string
+  isPoopGuarded?: boolean
+  customDatetime?: string
+}
+
+// 投稿タイプ別のタグオプション
+export const TAG_OPTIONS = {
+  meal: [
+    '完食', '残食', 'おいしそう', '食欲旺盛', 'ゆっくり食べた', 
+    '早食い', 'おやつも食べた', 'ドッグフード', '手作りごはん'
+  ],
+  poop: [
+    '良い状態', 'やや軟便', '下痢', '便秘', '量が多い', '量が少ない',
+    '色が良い', '色が悪い', '臭いが強い', '臭いが弱い'
+  ],
+  emotion: [
+    '元気', '嬉しい', '楽しい', 'リラックス', '興奮', '不安',
+    '寂しい', '怒っている', '悲しい', '満足', '疲れている'
+  ]
+} as const 

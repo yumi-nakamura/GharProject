@@ -5,7 +5,15 @@
  * @param path - ストレージ内のファイルパス
  * @returns 完全な画像URL
  */
-export function getOtayoriImageUrl(path: string): string {
+export function getOtayoriImageUrl(path: string | null | undefined): string | null {
+  if (!path) return null
+  
+  // 既に完全なURLの場合はそのまま返す
+  if (path.startsWith('http')) {
+    return path
+  }
+  
+  // 新しいパス構造（otayori/{dog_id}/{user_id}_{timestamp}.{ext}）に対応
   const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   return `${baseUrl}/storage/v1/object/public/dog-images/${path}`
 }
@@ -16,6 +24,7 @@ export function getOtayoriImageUrl(path: string): string {
  * @returns パスワード文字列（例：20240103）
  */
 export function generatePasswordFromBirthday(birthday: string): string {
+  if (!birthday) return '1234'
   return birthday.replace(/-/g, "")
 }
 
