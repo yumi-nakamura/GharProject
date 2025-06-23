@@ -1,183 +1,286 @@
-# GharProject
-がるきゅんアプリ
+# OTAYORI - 犬の健康管理アプリ
 
---
-ページ構成
-| ページ名          | パス例                  | 内容                       |
-| ------------- | -------------------- | ------------------------ |
-| ホーム           | `/`                  | 飼っている犬の一覧、記録導線、週次サマリー    |
-| サインアップ        | `/signup`            | 新規アカウント登録画面              |
-| ログイン          | `/login`             | メール＋パスワードログイン画面          |
-| 犬プロフィール詳細     | `/dog/[id]`          | 犬の基本情報、記録履歴へのリンク         |
-| OTAYORIタイムライン | `/dog/[id]/timeline` | 犬ごとの投稿一覧（ごはん・うんち・きもち）    |
-| OTAYORI作成     | `/otayori/new`       | 投稿フォーム（写真・感情・食事）         |
-| コミュニティ        | `/community`         | 他ユーザーのOTAYORI投稿一覧＋リアクション |
-| お知らせ一覧        | `/notifications`     | サービス・家族・病院からのお知らせ        |
-| プロフィール        | `/profile`           | 飼主情報・バッジ・SNSリンクなど        |
-| 設定・管理         | `/settings`          | 通知設定、家族／獣医の招待と管理         |
+## 概要
+OTAYORIは、愛犬の健康管理と記録を目的としたWebアプリケーションです。ごはん、うんち、きもちの記録を通じて、愛犬の健康状態を継続的に管理できます。
 
-🧩 コンポーネント構成（Components）
-| コンポーネント名            | 用途              |
-| ------------------- | --------------- |
-| `Button.tsx`        | プライマリ／セカンダリボタン  |
-| `ToggleSwitch.tsx`  | 公開設定、通知ON/OFFなど |
-| `TextInput.tsx`     | 単一行入力           |
-| `TextArea.tsx`      | メモやコメント入力       |
-| `ImageUploader.tsx` | 投稿画像アップロード      |
+## 主な機能
 
-レイアウト・ナビゲーション
-| コンポーネント名          | 用途                |
-| ----------------- | ----------------- |
-| `Navbar.tsx`      | ログイン状態表示、ナビゲーション  |
-| `FooterNav.tsx`   | スマホ向けボトムナビゲーションバー |
-| `PageWrapper.tsx` | ページ全体のレイアウト用ラッパー  |
+### 🐕 犬の管理
+- 複数犬の登録・管理
+- 犬のプロフィール情報（名前、犬種、誕生日、体重など）
+- 犬の削除機能（ソフトデリート対応）
 
+### 📝 おたより投稿
+- **ごはん記録**: 食事の写真、完食状況、食欲の記録
+- **うんち記録**: 排泄状況、健康状態の記録（プープバッグ機能付き）
+- **きもち記録**: 愛犬の感情・機嫌の記録
+- **タグ機能**: 投稿タイプ別のタグ付けによる分類・分析
+- **予約投稿**: 日時指定による投稿予約機能
 
-OTAYORI関連（記録）
-| コンポーネント名                          | 用途                |
-| --------------------------------- | ----------------- |
-| `EntryForm.tsx`                   | ごはん・うんち・きもち投稿フォーム |
-| `Card.tsx`（または `OTAYORICard.tsx`） | 投稿カード表示           |
-| `Detail.tsx`                      | 投稿詳細表示（コメント付き）    |
-| `WeeklySummaryCard.tsx`           | 週次傾向まとめ（AIアドバイス）  |
-| `ReactionBar.tsx`                 | いいね・絵文字・コメント入力バー  |
+### 📊 健康管理
+- 投稿履歴のタイムライン表示
+- 週次・月次サマリー
+- 健康レポート機能
+- 統計データの可視化
 
+### 🔐 セキュリティ
+- Supabase認証による安全なログイン
+- Row Level Security (RLS)によるデータ保護
+- プープバッグ機能（パスワード保護）
 
-犬プロフィール
-| コンポーネント名          | 用途            |
-| ----------------- | ------------- |
-| `DogCard.tsx`     | 一覧表示用の犬カード    |
-| `DogProfile.tsx`  | 詳細プロフィール情報表示  |
-| `DogTimeline.tsx` | 投稿履歴のタイムライン   |
-| `DogStats.tsx`    | サイズ・体重などの測定記録 |
+## 技術スタック
 
-ユーザ関連
-| コンポーネント名          | 用途           |
-| ----------------- | ------------ |
-| `SignupForm.tsx`  | 新規登録フォーム     |
-| `LoginForm.tsx`   | ログインフォーム     |
-| `UserCard.tsx`    | ユーザー情報表示     |
-| `InviteModal.tsx` | 家族／獣医の招待モーダル |
-| `FamilyList.tsx`  | 関係者の一覧と管理    |
+### フロントエンド
+- **Next.js 15.3.2** - Reactフレームワーク（App Router）
+- **React 19.0.0** - UIライブラリ
+- **TypeScript 5.x** - 型安全な開発
+- **Tailwind CSS 4.x** - CSSフレームワーク
+- **Turbopack** - 高速ビルドツール
 
-通知・設定
-| コンポーネント名               | 用途                 |
-| ---------------------- | ------------------ |
-| `NotificationList.tsx` | 通知の一覧表示            |
-| `NotificationItem.tsx` | 通知メッセージの個別表示       |
-| `ReminderSettings.tsx` | 食事／排泄／感情の記録リマインド設定 |
+### バックエンド・インフラ
+- **Supabase** - BaaS（認証・データベース・ストレージ）
+- **PostgreSQL** - リレーショナルデータベース
+- **Row Level Security** - セキュリティ制御
 
+### 主要ライブラリ
+- **@supabase/supabase-js** - Supabaseクライアント
+- **lucide-react** - アイコンライブラリ
+- **date-fns** - 日付操作
+- **classnames** - CSSクラス管理
 
-検索・フィルタ
-| コンポーネント名            | 用途           |
-| ------------------- | ------------ |
-| `SearchBar.tsx`     | 検索入力欄        |
-| `SearchTabs.tsx`    | 「犬」「投稿」切替タブ  |
-| `SearchResults.tsx` | 検索結果一覧       |
-| `TagSelector.tsx`   | 食材・感情などのタグ選択 |
+## プロジェクト構造
 
-🛠️ 今後の拡張候補
-
-BadgeDisplay.tsx：飼主バッジ／継続バッジの表示
-ChatPanel.tsx：家族や獣医とのチャット形式UI
-ShareToSNS.tsx：OTAYORI投稿のSNSカード生成と共有
-
-
-<pre><code>
-my-otayori-app/
-├── app/                             # App Routerのルート（各ページ）
-│   ├── layout.tsx                   # 共通レイアウト（Navbar含む）
-│   ├── page.tsx                     # ホーム画面
-│   ├── login/
-│   │   └── page.tsx                 # ログインページ
-│   ├── signup/
-│   │   └── page.tsx                 # サインアップページ
-│   ├── dog/
-│   │   └── [id]/
-│   │       ├── page.tsx             # 犬のプロフィール
-│   │       └── timeline/page.tsx    # 犬のOTAYORIタイムライン
-│   ├── otayori/
-│   │   └── new/page.tsx             # OTAYORI投稿ページ
-│   ├── community/
-│   │   └── page.tsx                 # コミュニティタイムライン
-│   ├── notifications/
-│   │   └── page.tsx                 # お知らせ一覧
-│   ├── settings/
-│   │   └── page.tsx                 # 通知・共有設定
-│   └── profile/
-│       └── page.tsx                 # 自分のプロフィール
-│
-├── components/
-│   ├── auth/
+```
+my-app/
+├── app/                          # Next.js App Router
+│   ├── layout.tsx               # 共通レイアウト
+│   ├── page.tsx                 # ホームページ
+│   ├── auth/                    # 認証関連
+│   │   └── callback/
+│   │       └── page.tsx
+│   ├── dog/                     # 犬関連ページ
+│   │   ├── [id]/
+│   │   │   ├── page.tsx         # 犬のプロフィール
+│   │   │   └── timeline/
+│   │   │       └── page.tsx     # 犬のタイムライン
+│   │   ├── edit/
+│   │   │   └── [id]/
+│   │   │       └── page.tsx     # 犬の編集
+│   │   └── register/
+│   │       └── page.tsx         # 犬の登録
+│   ├── otayori/                 # おたより関連
+│   │   └── new/
+│   │       └── page.tsx         # おたより投稿
+│   ├── community/               # コミュニティ
+│   │   └── page.tsx
+│   ├── notifications/           # 通知
+│   │   └── page.tsx
+│   ├── profile/                 # プロフィール
+│   │   └── page.tsx
+│   ├── settings/                # 設定
+│   │   └── page.tsx
+│   ├── health-report/           # 健康レポート
+│   │   └── page.tsx
+│   ├── login/                   # ログイン
+│   │   └── page.tsx
+│   ├── signup/                  # サインアップ
+│   │   └── page.tsx
+│   └── error/                   # エラーページ
+│       └── page.tsx
+├── components/                  # Reactコンポーネント
+│   ├── auth/                    # 認証コンポーネント
 │   │   ├── LoginForm.tsx
 │   │   └── SignupForm.tsx
-│   ├── layout/
-│   │   ├── Navbar.tsx
-│   │   └── FooterNav.tsx
-│   ├── common/
+│   ├── common/                  # 共通コンポーネント
 │   │   ├── Button.tsx
-│   │   ├── ToggleSwitch.tsx
-│   │   ├── TextInput.tsx
-│   │   ├── TextArea.tsx
+│   │   ├── DateTimePicker.tsx   # 日時選択
 │   │   ├── ImageUploader.tsx
-│   │   └── TagSelector.tsx
-│   ├── otayori/
-│   │   ├── EntryForm.tsx
-│   │   ├── Card.tsx
-│   │   ├── Detail.tsx
-│   │   ├── WeeklySummaryCard.tsx
-│   │   ├── PoopAnimation.tsx              # 🎉 投稿後演出専用アニメーション
-│   │   └── PoopImageGuard.tsx             # 🔐 パスワード入力後に画像を表示する保護表示UI
-│   │   └── ReactionBar.tsx
-│   ├── dog/
-│   │   ├── DogCard.tsx
+│   │   ├── TagSelector.tsx      # タグ選択
+│   │   ├── TextArea.tsx
+│   │   ├── TextInput.tsx
+│   │   └── ToggleSwitch.tsx
+│   ├── dog/                     # 犬関連コンポーネント
+│   │   ├── DogForm.tsx
 │   │   ├── DogProfile.tsx
-│   │   ├── DogTimeline.tsx
 │   │   └── DogStats.tsx
-│   ├── user/
-│   │   ├── UserCard.tsx
-│   │   ├── InviteModal.tsx
-│   │   ├── FamilyList.tsx
-│   │   └── BadgeDisplay.tsx
-│   ├── notification/
-│   │   ├── NotificationList.tsx
-│   │   └── NotificationItem.tsx
-│   └── search/
-│       ├── SearchBar.tsx
-│       ├── SearchTabs.tsx
-│       └── SearchResults.tsx
-│
-├── public/
-│   ├── images/                      # 静的画像（犬アイコンなど）
-│   │   ├── logo.png
-│   │   └── default-avatar.png
-│
-├── styles/
-│   ├── globals.css                  # 全体スタイル
-│   ├── tailwind.config.ts          # Tailwind設定
-│   └── variables.css                # カスタムプロパティなど（任意）
-│
-├── utils/
-│   ├── supabase/client.ts           # Supabaseクライアント初期化
-│   ├── auth.ts                      # ログイン／セッション管理
-│   └── formatter.ts                 # 日時・感情などのフォーマッター
-│
-├── middleware.ts                    # Supabaseのセッション保護用（任意）
-├── .env.local                       # SupabaseのURL／Keyなどの環境変数
-├── package.json
-└── tsconfig.json
-</code></pre>
+│   ├── layout/                  # レイアウトコンポーネント
+│   │   ├── FooterNav.tsx
+│   │   ├── Navbar.tsx
+│   │   ├── PageWrapper.tsx
+│   │   └── ProfileStatusProvider.tsx
+│   ├── notifications/           # 通知コンポーネント
+│   │   ├── NotificationItem.tsx
+│   │   └── NotificationList.tsx
+│   ├── otayori/                 # おたよりコンポーネント
+│   │   ├── Card.tsx             # 投稿カード
+│   │   ├── DogTimeline.tsx      # 犬のタイムライン
+│   │   ├── EntryForm.tsx        # 投稿フォーム
+│   │   ├── PoopAnimation.tsx    # 投稿後アニメーション
+│   │   ├── PoopImageGuard.tsx   # プープバッグ
+│   │   ├── ReactionBar.tsx
+│   │   └── WeeklySummaryCard.tsx
+│   ├── profile/                 # プロフィールコンポーネント
+│   │   ├── ProfileAchievements.tsx
+│   │   ├── ProfileEditForm.tsx
+│   │   ├── ProfileTimeline.tsx
+│   │   └── UserCard.tsx
+│   ├── settings/                # 設定コンポーネント
+│   │   ├── DogListItem.tsx
+│   │   └── ReminderSettings.tsx
+│   ├── community/               # コミュニティコンポーネント
+│   │   └── CommunityFeed.tsx
+│   └── user/                    # ユーザー関連コンポーネント
+│       └── UserCard.tsx
+├── types/                       # TypeScript型定義
+│   ├── dog.ts
+│   ├── notification.ts
+│   ├── otayori.ts
+│   ├── settings.ts
+│   └── user.ts
+├── utils/                       # ユーティリティ
+│   ├── supabase/                # Supabase関連
+│   │   ├── client.ts
+│   │   ├── middleware.ts
+│   │   └── server.ts
+│   ├── mcp/                     # MCP関連
+│   │   ├── client.ts
+│   │   ├── server.js
+│   │   └── server.ts
+│   ├── otayoriHelpers.ts
+│   └── userStats.ts
+├── styles/                      # スタイル
+│   └── theme.ts
+├── public/                      # 静的ファイル
+├── middleware.ts                # Next.jsミドルウェア
+├── next.config.ts               # Next.js設定
+├── tsconfig.json                # TypeScript設定
+├── package.json                 # 依存関係
+└── *.sql                        # データベーススキーマ
+```
 
+## データベーススキーマ
 
-components/ 配下を 機能ドメイン（auth, dog, otayori, user）ごとに分類
-App Router 構成に対応した app/ 配下にページを分割
-public/images に静的画像を配置し、プロフィールやカードに利用
-utils/ で Supabase、フォーマッタ、認証状態などの共通ロジックを集中管理
+### 主要テーブル
+- **user_profiles** - ユーザープロフィール
+- **dogs** - 犬の基本情報
+- **dog_user_relations** - 犬とユーザーの関係
+- **otayori** - おたより投稿（タグ・カスタム日時対応）
+- **dog_deletion_records** - 犬の削除記録
+- **reminders** - リマインダー設定
 
-**ライブラリ
-- [アイコン用　lucide](https://lucide.dev/icons/)
-- supabase
-- classnames
-- date-fns
+### 新機能対応
+- **タグシステム**: 投稿タイプ別のタグ付け
+- **予約投稿**: カスタム日時指定機能
+- **プープバッグ**: パスワード保護機能
+- **ソフトデリート**: データ保持機能
 
-https://motion.dev
+## 環境構築
+
+### 必須要件
+- Node.js 18.17.0以上
+- npm 9.0.0以上
+- Git 2.0.0以上
+
+### セットアップ手順
+
+1. **リポジトリのクローン**
+```bash
+git clone <repository-url>
+cd GharProject/my-app
+npm install
+```
+
+2. **環境変数の設定**
+```bash
+cp env.example .env.local
+# .env.localを編集してSupabaseの設定を追加
+```
+
+3. **Supabaseプロジェクトの設定**
+- [Supabase](https://supabase.com)でプロジェクトを作成
+- 環境変数にプロジェクトURLとAPIキーを設定
+
+4. **データベーススキーマの設定**
+SupabaseダッシュボードのSQL Editorで以下のSQLを実行:
+- `create_storage_bucket.sql`
+- `dog_deletion_setup.sql`
+- `update_otayori_schema.sql`
+- `add_poop_guard_columns.sql`
+- `rls_fix.sql`
+
+5. **開発サーバーの起動**
+```bash
+npm run dev
+```
+
+## 開発コマンド
+
+```bash
+# 開発サーバー起動（Turbopack使用）
+npm run dev
+
+# プロダクションビルド
+npm run build
+
+# プロダクションサーバー起動
+npm run start
+
+# リンター実行
+npm run lint
+
+# MCPサーバー起動（開発用）
+npm run mcp:server
+```
+
+## 主要機能の実装状況
+
+### ✅ 実装済み
+- ユーザー認証（サインアップ・ログイン）
+- 犬の登録・編集・削除
+- おたより投稿（ごはん・うんち・きもち）
+- タグ機能
+- 予約投稿機能
+- プープバッグ機能
+- タイムライン表示
+- 健康レポート
+- 設定画面
+- レスポンシブデザイン
+
+### 🚧 開発中
+- コミュニティ機能
+- 通知システム
+- リアクション機能
+
+### 📋 今後の予定
+- 画像最適化
+- パフォーマンス向上
+- テスト環境構築
+- CI/CDパイプライン
+
+## セキュリティ
+
+- **Row Level Security (RLS)**: 全テーブルで実装
+- **認証**: Supabase Authによる安全な認証
+- **データ保護**: ユーザー間のデータ分離
+- **環境変数**: 機密情報の適切な管理
+
+## パフォーマンス
+
+- **Turbopack**: 高速開発サーバー
+- **Next.js Image**: 画像最適化
+- **コード分割**: 効率的なバンドル分割
+- **キャッシュ**: 適切なキャッシュ戦略
+
+## ライセンス
+
+このプロジェクトはMITライセンスの下で公開されています。
+
+## 貢献
+
+プルリクエストやイシューの報告を歓迎します。貢献する前に、コーディング規約を確認してください。
+
+---
+
+**開発者**: OTAYORI開発チーム  
+**最終更新**: 2024年12月  
+**バージョン**: 1.0.0

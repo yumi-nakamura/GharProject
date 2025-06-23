@@ -32,7 +32,7 @@ export default function RootLayout({
       >
         <ProfileStatusProvider>
           <Navbar />
-          <main className="flex-1 pb-20">{children}</main>
+          <main className="flex-1 pt-16 pb-20">{children}</main>
           <FooterNav />
         </ProfileStatusProvider>
       </body>

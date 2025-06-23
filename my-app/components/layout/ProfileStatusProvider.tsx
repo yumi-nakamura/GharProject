@@ -10,26 +10,57 @@ export function ProfileStatusProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const supabase = createClient()
+    
     async function fetchDogProfile() {
-      const { data: userData } = await supabase.auth.getUser()
-      const userId = userData?.user?.id
-      if (!userId) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          setHasDogProfile(false)
+          setLoading(false)
+          return
+        }
+        
+        const { data: dogs, error } = await supabase.from("dogs").select("id").eq("owner_id", user.id)
+        if (error) {
+          console.error('犬プロフィール取得エラー:', error)
+          setHasDogProfile(false)
+        } else {
+          setHasDogProfile(!!dogs && dogs.length > 0)
+        }
+        setLoading(false)
+      } catch (error) {
+        console.error('プロフィール状態取得エラー:', error)
         setHasDogProfile(false)
         setLoading(false)
-        return
       }
-      const { data: dogs } = await supabase.from("dogs").select("id").eq("owner_id", userId)
-      setHasDogProfile(!!dogs && dogs.length > 0)
-      setLoading(false)
     }
+
     fetchDogProfile()
+    
     // 認証状態が変わったら再取得
-    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setLoading(true)
-      fetchDogProfile()
+      if (session?.user) {
+        try {
+          const { data: dogs, error } = await supabase.from("dogs").select("id").eq("owner_id", session.user.id)
+          if (error) {
+            console.error('犬プロフィール取得エラー:', error)
+            setHasDogProfile(false)
+          } else {
+            setHasDogProfile(!!dogs && dogs.length > 0)
+          }
+        } catch (error) {
+          console.error('プロフィール状態取得エラー:', error)
+          setHasDogProfile(false)
+        }
+      } else {
+        setHasDogProfile(false)
+      }
+      setLoading(false)
     })
+
     return () => {
-      listener?.subscription.unsubscribe()
+      subscription.unsubscribe()
     }
   }, [])
 

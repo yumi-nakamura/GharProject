@@ -1,28 +1,69 @@
-// app/otayori/new/page.tsx
-import { redirect } from "next/navigation"
-import { createClient } from "@/utils/supabase/server"
-import EntryForm from "@/components/otayori/EntryForm"
+"use client"
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { createClient } from '@/utils/supabase/client'
+import EntryForm from '@/components/otayori/EntryForm'
+import type { DogProfile } from '@/types/dog'
+import { PawPrint } from 'lucide-react'
 
-export default async function OtayoriNewPage() {
-  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-  const type = searchParams?.get("type") || undefined;
-  const supabase = await createClient()
-  const { data } = await supabase.auth.getUser()
-  if (!data?.user) {
-    redirect("/login")
+const supabase = createClient()
+
+export default function OtayoriNewPage() {
+  const [dogs, setDogs] = useState<DogProfile[]>([])
+  const [loading, setLoading] = useState(true)
+  const searchParams = useSearchParams()
+  const initialDogId = searchParams.get('dog_id') || undefined
+
+  useEffect(() => {
+    const fetchUserDogs = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setLoading(false)
+        return
+      }
+
+      const { data: rels } = await supabase.from('dog_user_relations').select('dog_id').eq('user_id', user.id)
+      const dogIdsFromRels = rels?.map(r => r.dog_id) || []
+      const { data: dogsFromOwnerId } = await supabase.from('dogs').select('id').eq('owner_id', user.id)
+      const dogIdsFromOwner = dogsFromOwnerId?.map(d => d.id) || []
+      const allDogIds = [...new Set([...dogIdsFromRels, ...dogIdsFromOwner])]
+
+      if (allDogIds.length > 0) {
+        const { data: dogData, error } = await supabase
+          .from('dogs')
+          .select('*')
+          .in('id', allDogIds)
+          .or('is_deleted.is.null,is_deleted.eq.false')
+          .order('created_at', { ascending: false })
+        if (dogData) setDogs(dogData)
+      }
+      setLoading(false)
+    }
+
+    fetchUserDogs()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-orange-50">
+        <div className="text-6xl animate-bounce mb-4">🐾</div>
+        <div className="text-lg font-semibold text-orange-600">準備をしています...</div>
+      </div>
+    )
   }
-  // ユーザーの犬情報を取得
-  const { data: dogs, error } = await supabase.from("dogs").select("id, birthday").eq("owner_id", data.user.id)
-  if (!dogs || dogs.length === 0) {
-    redirect("/dog/register")
+
+  if (dogs.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-orange-50 text-center p-4">
+        <div className="text-6xl mb-4">🐕</div>
+        <div className="text-lg font-semibold text-gray-700 mb-2">わんちゃんがいません</div>
+        <p className="text-gray-500 mb-6">先にご自身のわんちゃんを登録してください。</p>
+        <a href="/dog/register" className="bg-orange-500 text-white px-6 py-3 rounded-full hover:bg-orange-600 transition-colors font-semibold">
+          わんちゃんを登録する
+        </a>
+      </div>
+    )
   }
-  // ひとまず最初の犬を使う
-  const dog = dogs[0]
-  // ユーザーIDと犬IDをコンソールに表示
-  console.log('userId:', data.user.id, 'dogId:', dog.id)
-  return (
-    <main className="p-4">
-      <EntryForm dogId={dog.id} birthday={dog.birthday || ""} />
-    </main>
-  )
+
+  return <EntryForm dogs={dogs} initialDogId={initialDogId} />
 }
