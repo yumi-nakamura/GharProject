@@ -141,6 +141,23 @@ export function ProfileAchievements({ user, userStats }: ProfileAchievementsProp
 
   return (
     <div className="space-y-4">
+      {/* ユーザー挨拶 */}
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-100">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+            <Trophy size={20} className="text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800">
+              {user.name}さんの実績
+            </h3>
+            <p className="text-sm text-gray-600">
+              愛犬との思い出を記録して、素敵な実績を獲得しましょう！
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* 実績サマリー */}
       <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4">
         <div className="flex items-center justify-between">
