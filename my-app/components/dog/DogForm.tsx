@@ -5,7 +5,7 @@ import { createClient } from "@/utils/supabase/client"
 import { TextInput } from "@/components/common/TextInput"
 import { Button } from "@/components/common/Button"
 import type { DogProfile } from '@/types/dog'
-import { PawPrint, UploadCloud, Loader2 } from 'lucide-react'
+import { PawPrint, Loader2 } from 'lucide-react'
 
 const supabase = createClient()
 
@@ -144,11 +144,6 @@ export default function DogForm({ initialDogData, onComplete }: DogFormProps) {
                 <PawPrint className="w-16 h-16 text-orange-300" />
               </div>
             )}
-            {/* --- お客様のご指摘に基づき、問題のオーバーレイを一旦コメントアウトします ---
-            <div className="absolute inset-0 rounded-full bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center transition-opacity">
-              <UploadCloud className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-            */}
           </div>
         )}
       </div>

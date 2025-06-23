@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
 import type { DogProfile } from "@/types/dog"
-import { PawPrint, Camera, ChevronLeft, ChevronRight, Heart, BarChart2, MessageSquare, Bone, Bubbles, Calendar, Clock, TrendingUp, Award, Activity, Plus } from "lucide-react"
+import { ChevronLeft, ChevronRight, Heart, BarChart2, MessageSquare, Bone, Bubbles, Activity, Plus, Clock } from "lucide-react"
 import Link from "next/link"
 
 const supabase = createClient()
@@ -118,7 +118,7 @@ export default function HomePage() {
 
   const handleDogChange = async (direction: 'prev' | 'next') => {
     if (dogs.length <= 1) return
-    let newIndex = direction === 'prev'
+    const newIndex = direction === 'prev'
       ? (selectedDogIndex - 1 + dogs.length) % dogs.length
       : (selectedDogIndex + 1) % dogs.length
     setSelectedDogIndex(newIndex)
@@ -209,22 +209,19 @@ export default function HomePage() {
               {/* 状態サマリー */}
               <div className="grid grid-cols-3 gap-4 mb-6">
                 <StatCard 
-                  icon={<Bone className="text-orange-500" />} 
+                  icon={<Bone />} 
                   label="ごはん" 
                   value={dogStats?.mealCount || 0} 
-                  color="orange" 
                 />
                 <StatCard 
-                  icon={<Bubbles className="text-green-500" />} 
+                  icon={<Bubbles />} 
                   label="うんち" 
                   value={dogStats?.poopCount || 0} 
-                  color="green" 
                 />
                 <StatCard 
-                  icon={<Heart className="text-pink-500" />} 
+                  icon={<Heart />} 
                   label="きもち" 
                   value={dogStats?.emotionCount || 0} 
-                  color="pink" 
                 />
               </div>
 
@@ -241,22 +238,19 @@ export default function HomePage() {
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <QuickLogButton 
-                    icon={<Bone className="text-orange-600" />} 
+                    icon={<Bone />} 
                     label="ごはん" 
                     href={`/otayori/new?dog_id=${selectedDog.id}&type=meal`} 
-                    color="orange"
                   />
                   <QuickLogButton 
-                    icon={<Bubbles className="text-green-600" />} 
+                    icon={<Bubbles />} 
                     label="うんち" 
                     href={`/otayori/new?dog_id=${selectedDog.id}&type=poop`} 
-                    color="green"
                   />
                   <QuickLogButton 
-                    icon={<Heart className="text-pink-600" />} 
+                    icon={<Heart />} 
                     label="きもち" 
                     href={`/otayori/new?dog_id=${selectedDog.id}&type=emotion`} 
-                    color="pink"
                   />
                 </div>
               </div>
@@ -265,7 +259,7 @@ export default function HomePage() {
             {/* --- 統計情報 --- */}
             <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-orange-100">
               <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <BarChart2 className="text-orange-500" />
+                <BarChart2 />
                 今週の記録
               </h3>
               <div className="grid grid-cols-2 gap-4">
@@ -329,7 +323,7 @@ export default function HomePage() {
 }
 
 // 統計カードコンポーネント
-const StatCard = ({ icon, label, value, color }: { icon: React.ReactNode, label: string, value: number, color: string }) => (
+const StatCard = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: number }) => (
   <div className="text-center p-4 bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
     <div className="flex justify-center mb-2">{icon}</div>
     <div className="text-xl font-bold text-gray-800 mb-1">{value}</div>
@@ -338,7 +332,7 @@ const StatCard = ({ icon, label, value, color }: { icon: React.ReactNode, label:
 )
 
 // クイック記録ボタンコンポーネント
-const QuickLogButton = ({ icon, label, href, color }: { icon: React.ReactNode, label: string, href: string, color: string }) => (
+const QuickLogButton = ({ icon, label, href }: { icon: React.ReactNode, label: string, href: string }) => (
   <Link href={href}>
     <span className="flex flex-col items-center justify-center bg-white p-3 rounded-xl hover:shadow-md transition-all cursor-pointer border border-gray-100 hover:border-orange-200 group">
       <div className="w-8 h-8 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">{icon}</div>

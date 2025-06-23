@@ -54,20 +54,19 @@ export function DogTimeline({ dogId, birthday }: { dogId: string; birthday: stri
           return
         }
         
-        const posts = (data || []).map((item: any) => ({
-          id: item.id,
-          dogId: item.dog_id,
-          userId: item.user_id,
-          type: item.type,
-          content: item.content,
-          datetime: item.datetime,
-          photoUrl: item.photo_url,
-          mood: item.mood,
-          tags: item.tags,
-          customDatetime: item.custom_datetime,
-          // プープバッグ関連のフィールド
-          poopGuardPassword: item.poop_guard_password,
-          isPoopGuarded: item.is_poop_guarded
+        const posts = (data || []).map((item: Record<string, unknown>) => ({
+          id: String(item.id),
+          dogId: String(item.dog_id),
+          userId: String(item.user_id),
+          type: String(item.type) as 'meal' | 'poop' | 'emotion',
+          content: String(item.content),
+          datetime: String(item.datetime),
+          photoUrl: String(item.photo_url),
+          mood: item.mood ? String(item.mood) : undefined,
+          tags: Array.isArray(item.tags) ? item.tags as string[] : undefined,
+          customDatetime: item.custom_datetime ? String(item.custom_datetime) : undefined,
+          poopGuardPassword: item.poop_guard_password ? String(item.poop_guard_password) : undefined,
+          isPoopGuarded: typeof item.is_poop_guarded === 'boolean' ? item.is_poop_guarded as boolean : undefined,
         }))
         
         setPosts(posts)

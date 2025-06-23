@@ -1,8 +1,11 @@
 // app/dog/[id]/page.tsx
 import { DogProfile } from "@/components/dog/DogProfile"
 import { DogStats } from "@/components/dog/DogStats"
-export default function DogProfilePage({ params }: { params: { id: string } }) {
+
+export default function DogProfilePage() {
   const dog = {
+    id: "1",
+    ownerId: "user1",
     name: "モコ",
     breed: "トイプードル",
     avatarUrl: "/images/default-avatar.png",

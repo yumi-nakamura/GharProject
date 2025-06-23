@@ -1,18 +1,15 @@
 "use client"
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/utils/supabase/client'
 import EntryForm from '@/components/otayori/EntryForm'
 import type { DogProfile } from '@/types/dog'
-import { PawPrint } from 'lucide-react'
 
 const supabase = createClient()
 
 export default function OtayoriNewPage() {
   const [dogs, setDogs] = useState<DogProfile[]>([])
   const [loading, setLoading] = useState(true)
-  const searchParams = useSearchParams()
-  const initialDogId = searchParams.get('dog_id') || undefined
 
   useEffect(() => {
     const fetchUserDogs = async () => {
@@ -29,7 +26,7 @@ export default function OtayoriNewPage() {
       const allDogIds = [...new Set([...dogIdsFromRels, ...dogIdsFromOwner])]
 
       if (allDogIds.length > 0) {
-        const { data: dogData, error } = await supabase
+        const { data: dogData } = await supabase
           .from('dogs')
           .select('*')
           .in('id', allDogIds)
@@ -58,12 +55,12 @@ export default function OtayoriNewPage() {
         <div className="text-6xl mb-4">🐕</div>
         <div className="text-lg font-semibold text-gray-700 mb-2">わんちゃんがいません</div>
         <p className="text-gray-500 mb-6">先にご自身のわんちゃんを登録してください。</p>
-        <a href="/dog/register" className="bg-orange-500 text-white px-6 py-3 rounded-full hover:bg-orange-600 transition-colors font-semibold">
+        <Link href="/dog/register" className="bg-orange-500 text-white px-6 py-3 rounded-full hover:bg-orange-600 transition-colors font-semibold">
           わんちゃんを登録する
-        </a>
+        </Link>
       </div>
     )
   }
 
-  return <EntryForm dogs={dogs} initialDogId={initialDogId} />
+  return <EntryForm />
 }

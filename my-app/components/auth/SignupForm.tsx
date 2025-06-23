@@ -28,7 +28,7 @@ export function SignupForm() {
     // return
 
     // メール認証なしで即サインイン状態にする場合はこちら
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
     })
