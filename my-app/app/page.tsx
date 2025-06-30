@@ -539,7 +539,7 @@ function Dashboard({ communityPosts }: { communityPosts: CommunityPost[] }) {
         
         {selectedDog ? (
           <>
-            {/* わんちゃん選択カード */}
+            {/* わんちゃん選択カード - 写真を大きくして可愛く */}
             <div className="relative bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border-2 border-pink-200 transform hover:scale-105 transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
                 <button 
@@ -566,18 +566,18 @@ function Dashboard({ communityPosts }: { communityPosts: CommunityPost[] }) {
                   <img 
                     src={selectedDog.image_url || '/images/default-avatar.png'} 
                     alt={selectedDog.name} 
-                    className="w-24 h-24 rounded-full object-cover border-4 border-pink-200 shadow-lg" 
+                    className="w-32 h-32 rounded-full object-cover border-4 border-pink-200 shadow-lg" 
                   />
-                  <div className="absolute -bottom-1 -right-1 bg-pink-500 text-white rounded-full p-2 animate-pulse">
-                    <Heart size={16} fill="white" />
+                  <div className="absolute -bottom-2 -right-2 bg-pink-500 text-white rounded-full p-3 animate-pulse">
+                    <Heart size={20} fill="white" />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* 今日の記録 */}
+            {/* 今日の記録 - より可愛い表現に */}
             <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border-2 border-orange-200 transform hover:scale-105 transition-all duration-300">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                   <Activity className="text-orange-500" />
                   今日の記録
@@ -586,24 +586,45 @@ function Dashboard({ communityPosts }: { communityPosts: CommunityPost[] }) {
                   <Plus size={20} />
                 </Link>
               </div>
+              
+              {/* 可愛いメッセージを追加 */}
+              <div className="text-center mb-4 p-3 bg-gradient-to-r from-orange-50 to-pink-50 rounded-lg border border-orange-100">
+                <p className="text-sm text-gray-700 font-medium">
+                  {dogStats && dogStats.todayPosts > 0 
+                    ? `今日は${dogStats.todayPosts}回も記録できました！素晴らしいです！✨` 
+                    : "今日の記録はまだありません。さっそく記録してみましょう！🐾"
+                  }
+                </p>
+              </div>
 
               {dogStats && (
                 <div className="grid grid-cols-2 gap-4">
-                  <StatCard icon={<Bone />} label="食事" value={dogStats.mealCount} />
-                  <StatCard icon={<Bubbles />} label="排泄" value={dogStats.poopCount} />
-                  <StatCard icon={<Heart />} label="感情" value={dogStats.emotionCount} />
+                  <StatCard icon={<Bone />} label="ごはん" value={dogStats.mealCount} />
+                  <StatCard icon={<Bubbles />} label="うんち" value={dogStats.poopCount} />
+                  <StatCard icon={<Heart />} label="きもち" value={dogStats.emotionCount} />
                   <StatCard icon={<Activity />} label="総記録" value={dogStats.todayPosts} />
                 </div>
               )}
             </div>
 
-            {/* 統計情報 */}
+            {/* 統計情報 - より親しみやすい表現に */}
             {dogStats && (
               <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border-2 border-yellow-200 transform hover:scale-105 transition-all duration-300">
                 <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                   <LayoutDashboard className="text-yellow-500" />
-                  統計情報
+                  記録の成果
                 </h3>
+                
+                {/* 可愛いメッセージを追加 */}
+                <div className="text-center mb-4 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-100">
+                  <p className="text-sm text-gray-700 font-medium">
+                    {dogStats.streakDays > 0 
+                      ? `${dogStats.streakDays}日間も記録を続けています！頑張っていますね！🌟` 
+                      : "記録を始めて、愛犬との思い出を増やしましょう！💕"
+                    }
+                  </p>
+                </div>
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-yellow-600">{dogStats.weeklyPosts}</div>
@@ -617,17 +638,17 @@ function Dashboard({ communityPosts }: { communityPosts: CommunityPost[] }) {
               </div>
             )}
 
-            {/* クイックアクション */}
+            {/* クイックアクション - より可愛い表現に */}
             <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border-2 border-green-200 transform hover:scale-105 transition-all duration-300">
               <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <Zap className="text-green-500" />
-                クイックアクション
+                さっそく記録しよう！
               </h3>
               <div className="grid grid-cols-2 gap-4">
-                <QuickLogButton icon={<Bone />} label="食事記録" href="/otayori/new" />
-                <QuickLogButton icon={<Bubbles />} label="排泄記録" href="/otayori/new" />
-                <QuickLogButton icon={<Heart />} label="感情記録" href="/otayori/new" />
-                <QuickLogButton icon={<Activity />} label="その他" href="/otayori/new" />
+                <QuickLogButton icon={<Bone />} label="ごはんを記録" href="/otayori/new" />
+                <QuickLogButton icon={<Bubbles />} label="うんちを記録" href="/otayori/new" />
+                <QuickLogButton icon={<Heart />} label="きもちを記録" href="/otayori/new" />
+                <QuickLogButton icon={<Activity />} label="その他を記録" href="/otayori/new" />
               </div>
             </div>
 
@@ -637,7 +658,7 @@ function Dashboard({ communityPosts }: { communityPosts: CommunityPost[] }) {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                     <Users className="text-blue-500" />
-                    コミュニティ
+                    おともだちの記録
                   </h3>
                   <Link href="/community" className="text-sm text-blue-600 hover:text-blue-800">
                     もっと見る →
@@ -699,18 +720,20 @@ function Dashboard({ communityPosts }: { communityPosts: CommunityPost[] }) {
 }
 
 const StatCard = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: number }) => (
-  <div className="text-center p-3 bg-gradient-to-br from-white to-pink-50 rounded-xl border-2 border-pink-100 transform hover:scale-105 transition-all duration-300">
-    <div className="flex justify-center mb-1">{icon}</div>
-    <div className="text-lg font-bold text-gray-800">{value}</div>
-    <div className="text-xs text-gray-600">{label}</div>
+  <div className="text-center p-4 bg-gradient-to-br from-white to-pink-50 rounded-xl border-2 border-pink-100 transform hover:scale-105 transition-all duration-300 shadow-sm">
+    <div className="flex justify-center mb-2 text-2xl">{icon}</div>
+    <div className="text-xl font-bold text-gray-800 mb-1">{value}</div>
+    <div className="text-sm text-gray-600 font-medium">{label}</div>
   </div>
 )
 
 const QuickLogButton = ({ icon, label, href }: { icon: React.ReactNode, label: string, href: string }) => (
   <Link href={href}>
-    <button className="w-full flex items-center gap-3 p-3 bg-gradient-to-r from-white to-orange-50 rounded-xl border-2 border-orange-100 hover:shadow-lg transform hover:scale-105 transition-all duration-300">
-      {icon}
-      <span className="text-gray-700 font-medium">{label}</span>
+    <button className="w-full flex items-center gap-3 p-4 bg-gradient-to-r from-white to-orange-50 rounded-xl border-2 border-orange-100 hover:shadow-lg transform hover:scale-105 transition-all duration-300 group">
+      <div className="text-2xl group-hover:scale-110 transition-transform duration-300">
+        {icon}
+      </div>
+      <span className="text-gray-700 font-medium text-sm">{label}</span>
     </button>
   </Link>
 )

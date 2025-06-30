@@ -5,12 +5,14 @@ import { createClient } from '@/utils/supabase/client'
 import { User } from '@supabase/supabase-js'
 import EntryForm from '@/components/otayori/EntryForm'
 import type { DogProfile } from '@/types/dog'
+import { useRouter } from 'next/navigation'
 
 export default function OtayoriNewPage() {
   const [dogs, setDogs] = useState<DogProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [authInitialized, setAuthInitialized] = useState(false)
   const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
     const supabase = createClient()
@@ -60,7 +62,8 @@ export default function OtayoriNewPage() {
 
   const fetchUserDogs = async (user: User | null) => {
     if (!user) {
-      setLoading(false)
+      // 未認証時はログインページにリダイレクト
+      router.replace("/login")
       return
     }
 
@@ -81,6 +84,16 @@ export default function OtayoriNewPage() {
       if (dogData) setDogs(dogData)
     }
     setLoading(false)
+  }
+
+  // 認証が初期化され、未認証の場合はローディング表示
+  if (!authInitialized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-orange-50">
+        <div className="text-6xl animate-bounce mb-4">🐾</div>
+        <div className="text-lg font-semibold text-orange-600">認証確認中...</div>
+      </div>
+    )
   }
 
   if (loading) {

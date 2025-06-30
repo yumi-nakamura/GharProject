@@ -8,6 +8,7 @@ import { UserProfile } from '@/types/user'
 import { User } from '@supabase/supabase-js'
 import LikeButton from '@/components/community/LikeButton'
 import { Utensils, Heart, Search, Filter, X, PawPrint } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 interface CommunityPost extends OtayoriRecord {
   dog: DogProfile;
@@ -30,6 +31,7 @@ export default function CommunityPage() {
   const [authInitialized, setAuthInitialized] = useState(false)
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = 18;
+  const router = useRouter()
   
   // 検索関連のstate
   const [searchQuery, setSearchQuery] = useState('')
@@ -88,6 +90,12 @@ export default function CommunityPage() {
   }, [authInitialized, currentUser])
 
   const fetchCommunityPosts = async (user: User | null) => {
+    // 未認証時はログインページにリダイレクト
+    if (!user) {
+      router.replace("/login")
+      return
+    }
+
     try {
       console.log('コミュニティ投稿取得開始')
       const supabase = createClient()
@@ -199,32 +207,32 @@ export default function CommunityPage() {
           photoUrl: post.photo_url,
           mood: post.mood,
           tags: post.tags,
+          customDatetime: post.custom_datetime,
           poopGuardPassword: post.poop_guard_password,
           isPoopGuarded: post.is_poop_guarded,
-          customDatetime: post.custom_datetime,
-          dog: dog || { id: '', name: '', breed: '', ownerId: '', avatarUrl: '', birthday: '' },
-          user: user || { id: '', user_id: '', name: '', email: '', avatar_url: '', comment: '', created_at: '' },
+          dog,
+          user,
           likes_count
         }
       })
 
-      console.log('combinedPosts:', combinedPosts)
-      
-      // 投稿を最新順にソート（自分の投稿を特別扱いしない）
-      const sortedPosts = combinedPosts.sort((a, b) => {
-        const dateA = new Date(a.datetime).getTime()
-        const dateB = new Date(b.datetime).getTime()
-        return dateB - dateA // 最新順
-      })
-      setPosts(sortedPosts)
-      setCurrentPage(1) // 新しいデータ取得時は1ページ目に戻す
-      console.log('投稿設定完了')
+      console.log('結合後の投稿データ:', combinedPosts)
+      setPosts(combinedPosts)
+      setLoading(false)
     } catch (error) {
-      console.error('コミュニティ投稿の取得に失敗しました:', error)
-    } finally {
-      console.log('loadingをfalseに設定')
+      console.error('コミュニティ投稿取得エラー:', error)
       setLoading(false)
     }
+  }
+
+  // 認証が初期化され、未認証の場合はローディング表示
+  if (!authInitialized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div className="text-6xl animate-bounce mb-4">🐾</div>
+        <div className="text-lg font-semibold text-blue-600">認証確認中...</div>
+      </div>
+    )
   }
 
   // ページング用の投稿リスト
