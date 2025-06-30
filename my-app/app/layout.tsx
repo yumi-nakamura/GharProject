@@ -4,6 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { FooterNav } from "@/components/layout/FooterNav";
 import { ProfileStatusProvider } from "@/components/layout/ProfileStatusProvider";
+import { AuthProvider } from "@/components/layout/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,11 +31,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ProfileStatusProvider>
-          <Navbar />
-          <main className="flex-1 pt-16 pb-20">{children}</main>
-          <FooterNav />
-        </ProfileStatusProvider>
+        <AuthProvider>
+          <ProfileStatusProvider>
+            <Navbar />
+            <main className="flex-1 pt-16 pb-20">{children}</main>
+            <FooterNav />
+          </ProfileStatusProvider>
+        </AuthProvider>
       </body>
     </html>
   );

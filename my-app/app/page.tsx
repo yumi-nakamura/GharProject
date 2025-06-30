@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
 import { User } from "@supabase/supabase-js"
+import { useAuth } from "@/components/layout/AuthProvider"
 import { ChevronLeft, ChevronRight, Heart, Bone, Bubbles, Activity, Plus, Shield, Users, Zap, Award, Star, HeartPulse, PawPrint, LayoutDashboard, Dog } from "lucide-react"
 import Link from "next/link"
 
@@ -27,57 +28,95 @@ interface DogStats {
 }
 
 export default function HomePage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [authInitialized, setAuthInitialized] = useState(false)
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const { user, loading, initialized } = useAuth()
+  const [communityPosts, setCommunityPosts] = useState<any[]>([])
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        console.log('認証チェック開始...')
-        const result = await supabase.auth.getUser()
-        console.log('getUser返り値:', result)
-        const { data: { user } } = result
-        console.log('認証結果:', { user: !!user })
-        setIsLoggedIn(!!user)
-        setCurrentUser(user)
-      } catch (error) {
-        console.error('認証チェックでエラーが発生:', error)
-        setIsLoggedIn(false)
-      } finally {
-        console.log('認証チェック完了、ローディング終了')
-        setLoading(false)
-        setAuthInitialized(true)
-      }
+    if (initialized && user) {
+      fetchCommunityPosts(user)
     }
+  }, [initialized, user])
 
-    checkAuth()
-
-    // 認証状態の変更を監視
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('認証状態変更:', event, session?.user)
-      setCurrentUser(session?.user || null)
-      setIsLoggedIn(!!session?.user)
+  const fetchCommunityPosts = async (currentUser: User) => {
+    try {
+      console.log('コミュニティ投稿取得開始')
       
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        // 認証状態が更新されたら投稿を再取得
-        await fetchCommunityPosts(session?.user || null)
+      // おたよりデータを取得（RLSポリシーを考慮）
+      console.log('otayoriテーブルからデータ取得中...')
+      const { data: otayoriData, error: otayoriError } = await supabase
+        .from('otayori')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      console.log('otayoriData:', otayoriData)
+      console.log('otayoriError:', otayoriError)
+
+      if (otayoriError) {
+        console.error('otayori取得エラー:', otayoriError)
+        return
       }
-    })
 
-    return () => {
-      subscription.unsubscribe()
+      if (!otayoriData || otayoriData.length === 0) {
+        console.log('otayoriデータが空です')
+        setCommunityPosts([])
+        return
+      }
+
+      // 犬とユーザー情報を取得
+      const dogIds = [...new Set(otayoriData.map(post => post.dog_id))]
+      const userIds = [...new Set(otayoriData.map(post => post.user_id))]
+      
+      console.log('dogIds:', dogIds)
+      console.log('userIds:', userIds)
+
+      console.log('dogsテーブルからデータ取得中...')
+      const { data: dogsData, error: dogsError } = await supabase
+        .from('dogs')
+        .select('*')
+        .in('id', dogIds)
+
+      console.log('dogsData:', dogsData)
+      console.log('dogsError:', dogsError)
+
+      if (dogsError) {
+        console.error('dogs取得エラー:', dogsError)
+        return
+      }
+
+      console.log('user_profilesテーブルからデータ取得中...')
+      const { data: usersData, error: usersError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .in('user_id', userIds)
+
+      console.log('usersData:', usersData)
+      console.log('usersError:', usersError)
+
+      if (usersError) {
+        console.error('user_profiles取得エラー:', usersError)
+        return
+      }
+
+      // データを結合
+      const posts = otayoriData.map(post => {
+        const dog = dogsData?.find(d => d.id === post.dog_id)
+        const user = usersData?.find(u => u.user_id === post.user_id)
+        return {
+          ...post,
+          dog,
+          user
+        }
+      })
+
+      console.log('結合後の投稿データ:', posts)
+      setCommunityPosts(posts)
+    } catch (error) {
+      console.error('コミュニティ投稿取得エラー:', error)
     }
-  }, [])
+  }
 
-  useEffect(() => {
-    if (authInitialized && currentUser) {
-      fetchCommunityPosts(currentUser)
-    }
-  }, [authInitialized, currentUser])
-
-  if (loading) {
+  // 認証が初期化されるまでローディング表示
+  if (loading || !initialized) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-pink-50 via-orange-50 to-yellow-50">
         <div className="text-6xl animate-bounce mb-4">🐾</div>
@@ -87,8 +126,8 @@ export default function HomePage() {
   }
 
   // ログイン済みの場合はダッシュボードにリダイレクト
-  if (isLoggedIn) {
-    return <Dashboard />
+  if (user) {
+    return <Dashboard communityPosts={communityPosts} />
   }
 
   // 未ログイン時はランディングページを表示
@@ -355,7 +394,7 @@ function FeatureSection({ title, subtitle, description, features, image, reverse
 }
 
 // ログイン済みユーザー向けのダッシュボード（既存のコードを再利用）
-function Dashboard() {
+function Dashboard({ communityPosts }: { communityPosts: any[] }) {
   const [dogs, setDogs] = useState<DogProfile[]>([])
   const [selectedDogIndex, setSelectedDogIndex] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -612,10 +651,3 @@ const ActionLink = ({ icon, label, href, gradient }: { icon: React.ReactNode, la
     </button>
   </Link>
 )
-
-function fetchCommunityPosts(user: User | null) {
-  // 引数で渡されたユーザー情報を使用
-  const authUser = user
-  // 認証ユーザー情報を確実に使用
-  console.log('コミュニティ投稿取得:', authUser)
-}

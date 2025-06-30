@@ -3,51 +3,34 @@
 import { type ReactElement, useEffect, useState } from "react"
 import { Home, PawPrint, Camera, Bell, Settings } from "lucide-react"
 import { useProfileStatus } from "@/components/layout/ProfileStatusProvider"
+import { useAuth } from "@/components/layout/AuthProvider"
 import { createClient } from "@/utils/supabase/client"
 import Link from "next/link"
 
 export function FooterNav() {
   const { hasDogProfile, loading } = useProfileStatus()
+  const { user } = useAuth()
   const [dogId, setDogId] = useState<string | null>(null)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
-    const supabase = createClient()
-    
-    // 認証状態を確認
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setIsAuthenticated(!!user)
-      
+    const fetchDogId = async () => {
       if (user) {
+        const supabase = createClient()
         // 犬のIDを取得
         const { data: dogs } = await supabase.from("dogs").select("id").eq("owner_id", user.id)
-        if (dogs && dogs.length > 0) {
-          setDogId(dogs[0].id)
-        }
-      }
-    }
-
-    checkAuth()
-
-    // 認証状態の変化を監視
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setIsAuthenticated(!!session?.user)
-      if (session?.user) {
-        const { data: dogs } = await supabase.from("dogs").select("id").eq("owner_id", session.user.id)
         if (dogs && dogs.length > 0) {
           setDogId(dogs[0].id)
         }
       } else {
         setDogId(null)
       }
-    })
+    }
 
-    return () => subscription.unsubscribe()
-  }, [])
+    fetchDogId()
+  }, [user])
 
   // 認証されていない場合は何も表示しない
-  if (!isAuthenticated) {
+  if (!user) {
     return null
   }
 
