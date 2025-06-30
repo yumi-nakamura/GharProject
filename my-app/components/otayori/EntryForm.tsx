@@ -36,22 +36,26 @@ export default function OtayoriEntryForm() {
   }
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const dogIdParam = params.get('dog_id')
-    const typeParam = params.get('type')
-    if (typeParam === 'meal' || typeParam === 'poop' || typeParam === 'emotion') {
-      setType(typeParam)
-    }
-
     const fetchInitialData = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      let dogIdParam: string | null = null;
+      let typeParam: string | null = null;
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        dogIdParam = params.get('dog_id');
+        typeParam = params.get('type');
+        if (typeParam === 'meal' || typeParam === 'poop' || typeParam === 'emotion') {
+          setType(typeParam);
+        }
+      }
 
-      const { data: rels } = await supabase.from('dog_user_relations').select('dog_id').eq('user_id', user.id)
-      const dogIdsFromRels = rels?.map(r => r.dog_id) || []
-      const { data: dogsFromOwnerId } = await supabase.from('dogs').select('id').eq('owner_id', user.id)
-      const dogIdsFromOwner = dogsFromOwnerId?.map(d => d.id) || []
-      const allDogIds = [...new Set([...dogIdsFromRels, ...dogIdsFromOwner])]
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: rels } = await supabase.from('dog_user_relations').select('dog_id').eq('user_id', user.id);
+      const dogIdsFromRels = rels?.map(r => r.dog_id) || [];
+      const { data: dogsFromOwnerId } = await supabase.from('dogs').select('id').eq('owner_id', user.id);
+      const dogIdsFromOwner = dogsFromOwnerId?.map(d => d.id) || [];
+      const allDogIds = [...new Set([...dogIdsFromRels, ...dogIdsFromOwner])];
 
       if (allDogIds.length > 0) {
         const { data: dogData } = await supabase
@@ -59,21 +63,21 @@ export default function OtayoriEntryForm() {
           .select("*")
           .in('id', allDogIds)
           .or('is_deleted.is.null,is_deleted.eq.false')
-          .order('created_at', { ascending: false })
+          .order('created_at', { ascending: false });
 
         if (dogData) {
-          setDogs(dogData)
+          setDogs(dogData);
           if (dogIdParam) {
-            const initialIndex = dogData.findIndex(d => d.id === dogIdParam)
+            const initialIndex = dogData.findIndex(d => d.id === dogIdParam);
             if (initialIndex !== -1) {
-              setSelectedDogIndex(initialIndex)
+              setSelectedDogIndex(initialIndex);
             }
           }
         }
       }
-    }
-    fetchInitialData()
-  }, [])
+    };
+    fetchInitialData();
+  }, []);
 
   const handleDogChange = (direction: 'prev' | 'next') => {
     if (dogs.length <= 1) return
