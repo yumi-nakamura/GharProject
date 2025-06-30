@@ -1,12 +1,13 @@
 // otayori/EntryForm.tsx
 "use client"
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
-import { Camera, ChevronLeft, ChevronRight, Send, Loader2, Bone, Bubbles, Heart, Lock, Shield, Tag } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Send, Loader2, Bone, Bubbles, Heart, Lock, Shield, Tag } from 'lucide-react'
 import type { DogProfile } from '@/types/dog'
 import TagSelector from '@/components/common/TagSelector'
 import DateTimePicker from '@/components/common/DateTimePicker'
+import { ImageUploader } from '@/components/common/ImageUploader'
 
 const supabase = createClient()
 
@@ -19,7 +20,6 @@ export default function OtayoriEntryForm() {
   const [photo, setPhoto] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [customDatetime, setCustomDatetime] = useState<string>('')
@@ -83,26 +83,12 @@ export default function OtayoriEntryForm() {
     setSelectedDogIndex(newIndex)
   }
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0]
-      
-      // ファイル形式チェック
-      const fileExt = file.name.split('.').pop()?.toLowerCase()
-      if (!fileExt || !['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt)) {
-        alert('対応していないファイル形式です。JPG、PNG、GIF、WebP形式の画像を選択してください。')
-        return
-      }
+  const handlePhotoSelect = (file: File) => {
+    setPhoto(file)
+  }
 
-      // ファイルサイズチェック（5MB以下）
-      if (file.size > 5 * 1024 * 1024) {
-        alert('ファイルサイズが大きすぎます。5MB以下の画像を選択してください。')
-        return
-      }
-
-      setPhoto(file)
-      setPhotoPreview(URL.createObjectURL(file))
-    }
+  const handlePhotoPreview = (url: string) => {
+    setPhotoPreview(url)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -327,47 +313,9 @@ export default function OtayoriEntryForm() {
               </div>
             </div>
           )}
-          <div
-            className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition-colors"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {photoPreview ? (
-              <div className="space-y-3">
-                <img src={photoPreview} alt="プレビュー" className="mx-auto h-32 rounded-lg object-cover shadow-sm" />
-                <div className="text-sm text-gray-600">
-                  <p>{photo?.name}</p>
-                  <p>{photo?.size ? (photo.size / 1024 / 1024).toFixed(2) : '0'} MB</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setPhoto(null)
-                    setPhotoPreview(null)
-                    if (fileInputRef.current) {
-                      fileInputRef.current.value = ''
-                    }
-                  }}
-                  className="text-red-500 hover:text-red-700 text-sm font-medium"
-                >
-                  削除
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center text-gray-500">
-                <Camera size={32} className="mb-2" />
-                <span>写真を追加</span>
-                <span className="text-xs mt-1">クリックしてファイルを選択</span>
-                <span className="text-xs text-gray-400 mt-1">JPG, PNG, GIF, WebP (5MB以下)</span>
-              </div>
-            )}
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handlePhotoChange}
-            className="hidden"
+          <ImageUploader
+            onSelect={handlePhotoSelect}
+            onPreview={handlePhotoPreview}
           />
         </div>
         

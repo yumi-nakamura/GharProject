@@ -664,7 +664,7 @@ export default function CommunityPage() {
                       </span>
                       {currentUser && post.userId === currentUser.id && (
                         <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
-                          あなたの投稿
+                          うちのコ
                         </span>
                       )}
                     </div>
