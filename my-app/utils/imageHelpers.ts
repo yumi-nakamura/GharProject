@@ -1,5 +1,3 @@
-import heic2any from 'heic2any'
-
 /**
  * HEIC画像をJPEGに変換する
  * @param file - 変換対象のファイル
@@ -11,18 +9,23 @@ export const convertHeicToJpeg = async (file: File): Promise<Blob> => {
     if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic')) {
       console.log('HEIC画像を変換中...')
       
-      // HEICをJPEGに変換
-      const convertedBlob = await heic2any({
-        blob: file,
-        toType: 'image/jpeg',
-        quality: 0.8
-      })
-      
-      console.log('HEIC変換完了')
-      return convertedBlob as Blob
+      // クライアントサイドでのみheic2anyを動的インポート
+      if (typeof window !== 'undefined') {
+        const heic2any = (await import('heic2any')).default
+        
+        // HEICをJPEGに変換
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 0.8
+        })
+        
+        console.log('HEIC変換完了')
+        return convertedBlob as Blob
+      }
     }
     
-    // HEICでない場合はそのまま返す
+    // HEICでない場合またはサーバーサイドの場合はそのまま返す
     return file
   } catch (error) {
     console.error('HEIC変換エラー:', error)
@@ -50,8 +53,8 @@ export const isHeicFile = (file: File): boolean => {
  */
 export const prepareImageForUpload = async (file: File): Promise<File> => {
   try {
-    // HEICファイルの場合は変換
-    if (isHeicFile(file)) {
+    // HEICファイルの場合は変換（クライアントサイドでのみ）
+    if (isHeicFile(file) && typeof window !== 'undefined') {
       const convertedBlob = await convertHeicToJpeg(file)
       
       // BlobをFileオブジェクトに変換
@@ -78,6 +81,11 @@ export const prepareImageForUpload = async (file: File): Promise<File> => {
  */
 export const createImagePreview = async (file: File): Promise<string> => {
   try {
+    // クライアントサイドでのみURL生成
+    if (typeof window === 'undefined') {
+      return ''
+    }
+    
     // HEICファイルの場合は変換してからプレビュー生成
     if (isHeicFile(file)) {
       const convertedBlob = await convertHeicToJpeg(file)
@@ -89,6 +97,6 @@ export const createImagePreview = async (file: File): Promise<string> => {
   } catch (error) {
     console.error('プレビュー生成エラー:', error)
     // エラーの場合は元のファイルでプレビュー生成
-    return URL.createObjectURL(file)
+    return typeof window !== 'undefined' ? URL.createObjectURL(file) : ''
   }
 } 

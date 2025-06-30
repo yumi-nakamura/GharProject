@@ -39,6 +39,8 @@ export default function OtayoriEntryForm() {
     const fetchInitialData = async () => {
       let dogIdParam: string | null = null;
       let typeParam: string | null = null;
+      
+      // クライアントサイドでのみURLパラメータを取得
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
         dogIdParam = params.get('dog_id');

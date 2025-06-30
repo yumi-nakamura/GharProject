@@ -18,20 +18,26 @@ export function ImageUploader({ onSelect, onPreview, className = "" }: ImageUplo
     try {
       setIsConverting(true)
       
-      // HEICファイルの場合は変換
-      const preparedFile = await prepareImageForUpload(file)
-      
-      // プレビュー生成
-      const preview = await createImagePreview(file)
-      setPreviewUrl(preview)
-      
-      // 親コンポーネントに通知
-      onSelect(preparedFile)
-      onPreview?.(preview)
-      
-      // HEIC変換の場合はユーザーに通知
-      if (isHeicFile(file)) {
-        console.log('HEIC画像をJPEGに変換しました')
+      // クライアントサイドでのみ画像処理を実行
+      if (typeof window !== 'undefined') {
+        // HEICファイルの場合は変換
+        const preparedFile = await prepareImageForUpload(file)
+        
+        // プレビュー生成
+        const preview = await createImagePreview(file)
+        setPreviewUrl(preview)
+        
+        // 親コンポーネントに通知
+        onSelect(preparedFile)
+        onPreview?.(preview)
+        
+        // HEIC変換の場合はユーザーに通知
+        if (isHeicFile(file)) {
+          console.log('HEIC画像をJPEGに変換しました')
+        }
+      } else {
+        // サーバーサイドの場合は元のファイルを使用
+        onSelect(file)
       }
     } catch (error) {
       console.error('画像処理エラー:', error)
@@ -43,7 +49,7 @@ export function ImageUploader({ onSelect, onPreview, className = "" }: ImageUplo
   }
 
   const clearPreview = () => {
-    if (previewUrl) {
+    if (previewUrl && typeof window !== 'undefined') {
       URL.revokeObjectURL(previewUrl)
       setPreviewUrl(null)
     }
