@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createClient } from "@/utils/supabase/client"
+import { User } from "@supabase/supabase-js"
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm"
 import { ProfileAchievements } from "@/components/profile/ProfileAchievements"
 import { ProfileTimeline } from "@/components/profile/ProfileTimeline"
@@ -10,40 +11,82 @@ import type { UserProfile, UserStats } from "@/types/user"
 import { calculateUserStats } from "@/utils/userStats"
 import { Trophy, Clock, Heart, PawPrint, Star, Calendar } from "lucide-react"
 
-const supabase = createClient()
-
 export default function ProfilePage() {
   const [user, setUser] = useState<UserProfile | null>(null)
   const [userStats, setUserStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [authInitialized, setAuthInitialized] = useState(false)
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
 
   useEffect(() => {
-    fetchUserProfile()
+    const supabase = createClient()
+    
+    // 初期認証状態を取得
+    const initializeAuth = async () => {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser()
+        
+        if (error) {
+          console.error('初期認証状態取得エラー:', error)
+        } else {
+          console.log('初期認証状態:', user)
+          setCurrentUser(user)
+        }
+        setAuthInitialized(true)
+      } catch (error) {
+        console.error('初期認証状態取得に失敗:', error)
+        setAuthInitialized(true)
+      }
+    }
+
+    initializeAuth()
+
+    // 認証状態の変更を監視
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('認証状態変更:', event, session?.user)
+      setCurrentUser(session?.user || null)
+      
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        // 認証状態が更新されたらプロフィールを再取得
+        await fetchUserProfile(session?.user || null)
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
 
-  const fetchUserProfile = async () => {
+  // 認証が初期化されたらプロフィールを取得
+  useEffect(() => {
+    if (authInitialized) {
+      fetchUserProfile(currentUser)
+    }
+  }, [authInitialized, currentUser])
+
+  const fetchUserProfile = async (user: User | null) => {
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      if (!authUser) {
+      if (!user) {
         window.location.href = "/login"
         return
       }
 
       // まず既存のプロフィールを取得
+      const supabase = createClient()
       const { data, error } = await supabase
         .from("user_profiles")
         .select("*")
-        .eq("user_id", authUser.id)
+        .eq("user_id", user.id)
         .single()
 
       if (error && error.code === 'PGRST116') {
         // プロフィールが存在しない場合は作成
         console.log("プロフィールが存在しません。新規作成します。")
         const newProfile = {
-          user_id: authUser.id,
-          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || "ユーザー",
-          email: authUser.email || "",
-          avatar_url: authUser.user_metadata?.avatar_url || "",
+          user_id: user.id,
+          name: user.user_metadata?.name || user.email?.split('@')[0] || "ユーザー",
+          email: user.email || "",
+          avatar_url: user.user_metadata?.avatar_url || "",
           comment: "",
           created_at: new Date().toISOString()
         }
@@ -58,6 +101,25 @@ export default function ProfilePage() {
           console.error("プロフィール作成エラー:", createError)
           // 作成に失敗した場合は、認証ユーザーの情報からプロフィールを構築
           const fallbackProfile: UserProfile = {
+            id: user.id,
+            user_id: user.id,
+            name: user.user_metadata?.name || user.email?.split('@')[0] || "ユーザー",
+            email: user.email || "",
+            avatar_url: user.user_metadata?.avatar_url || "",
+            comment: "",
+            created_at: user.created_at
+          }
+          setUser(fallbackProfile)
+        } else {
+          setUser(createdProfile)
+        }
+      } else if (error) {
+        console.error("プロフィール取得エラー:", error)
+        // その他のエラーの場合も、認証ユーザーの情報からプロフィールを構築
+        const supabase = createClient()
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+        if (authUser) {
+          const fallbackProfile: UserProfile = {
             id: authUser.id,
             user_id: authUser.id,
             name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || "ユーザー",
@@ -67,32 +129,22 @@ export default function ProfilePage() {
             created_at: authUser.created_at
           }
           setUser(fallbackProfile)
-        } else {
-          setUser(createdProfile)
+          
+          // 統計情報も取得
+          const stats = await calculateUserStats(authUser.id)
+          setUserStats(stats)
         }
-      } else if (error) {
-        console.error("プロフィール取得エラー:", error)
-        // その他のエラーの場合も、認証ユーザーの情報からプロフィールを構築
-        const fallbackProfile: UserProfile = {
-          id: authUser.id,
-          user_id: authUser.id,
-          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || "ユーザー",
-          email: authUser.email || "",
-          avatar_url: authUser.user_metadata?.avatar_url || "",
-          comment: "",
-          created_at: authUser.created_at
-        }
-        setUser(fallbackProfile)
       } else {
         setUser(data)
       }
 
       // 統計情報を取得
-      const stats = await calculateUserStats(authUser.id)
+      const stats = await calculateUserStats(user.id)
       setUserStats(stats)
     } catch (error) {
       console.error("プロフィール取得エラー:", error)
       // エラーの場合も、認証ユーザーの情報からプロフィールを構築
+      const supabase = createClient()
       const { data: { user: authUser } } = await supabase.auth.getUser()
       if (authUser) {
         const fallbackProfile: UserProfile = {
@@ -122,6 +174,7 @@ export default function ProfilePage() {
       console.log('プロフィール更新開始:', updated)
       
       // プロフィールが存在するかチェック
+      const supabase = createClient()
       const { data: existingProfile, error: checkError } = await supabase
         .from("user_profiles")
         .select("id")

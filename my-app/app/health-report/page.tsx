@@ -53,29 +53,58 @@ export default function HealthReportPage() {
   const [loading, setLoading] = useState(true)
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter'>('week')
 
-  const fetchHealthData = useCallback(async (dogId: string, period: 'week' | 'month' | 'quarter') => {
+  const analyzeHealthData = useCallback((posts: OtayoriPost[], period: string): HealthData => {
+    const mealPosts = posts.filter(post => post.type === 'meal')
+    const poopPosts = posts.filter(post => post.type === 'poop')
+    const emotionPosts = posts.filter(post => post.type === 'emotion')
+
+    const days = period === 'week' ? 7 : period === 'month' ? 30 : 90
+    const averageMealsPerDay = mealPosts.length / days
+    const averagePoopsPerDay = poopPosts.length / days
+
+    // 健康スコアの計算（簡易版）
+    let healthScore = 70 // ベーススコア
+
+    // 食事の一貫性
+    if (averageMealsPerDay >= 1 && averageMealsPerDay <= 3) healthScore += 10
+    if (mealPosts.length > 0) healthScore += 5
+
+    // 排泄の一貫性
+    if (averagePoopsPerDay >= 1 && averagePoopsPerDay <= 4) healthScore += 10
+    if (poopPosts.length > 0) healthScore += 5
+
+    // 感情記録の充実度
+    if (emotionPosts.length > 0) healthScore += 10
+
+    healthScore = Math.min(100, healthScore)
+
+    // アドバイスの生成
+    const recommendations = generateRecommendations(mealPosts, poopPosts, emotionPosts, averageMealsPerDay, averagePoopsPerDay)
+    const alerts = generateAlerts(mealPosts, poopPosts, emotionPosts, averageMealsPerDay, averagePoopsPerDay)
+
+    return {
+      period: period === 'week' ? '1週間' : period === 'month' ? '1ヶ月' : '3ヶ月',
+      mealCount: mealPosts.length,
+      poopCount: poopPosts.length,
+      emotionCount: emotionPosts.length,
+      averageMealsPerDay,
+      averagePoopsPerDay,
+      consistency: Math.round((posts.length / days) * 100),
+      moodTrend: analyzeMoodTrend(emotionPosts),
+      healthScore,
+      recommendations,
+      alerts
+    }
+  }, [])
+
+  const fetchHealthData = useCallback(async (dogId: string, period: string) => {
     try {
-      const now = new Date()
-      let startDate: Date
-
-      switch (period) {
-        case 'week':
-          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-          break
-        case 'month':
-          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-          break
-        case 'quarter':
-          startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
-          break
-      }
-
       const { data: posts, error } = await supabase
         .from('otayori')
         .select('*')
         .eq('dog_id', dogId)
-        .gte('datetime', startDate.toISOString())
-        .order('datetime', { ascending: true })
+        .gte('datetime', new Date(Date.now() - (period === 'week' ? 7 : period === 'month' ? 30 : 90) * 24 * 60 * 60 * 1000).toISOString())
+        .order('datetime', { ascending: false })
 
       if (error) {
         console.error('健康データ取得エラー:', error)
@@ -87,7 +116,7 @@ export default function HealthReportPage() {
     } catch (error) {
       console.error('健康データ取得エラー:', error)
     }
-  }, [])
+  }, [analyzeHealthData])
 
   useEffect(() => {
     fetchDogs()
@@ -137,50 +166,6 @@ export default function HealthReportPage() {
       setLoading(false)
     }
   }
-
-  const analyzeHealthData = useCallback((posts: OtayoriPost[], period: string): HealthData => {
-    const mealPosts = posts.filter(post => post.type === 'meal')
-    const poopPosts = posts.filter(post => post.type === 'poop')
-    const emotionPosts = posts.filter(post => post.type === 'emotion')
-
-    const days = period === 'week' ? 7 : period === 'month' ? 30 : 90
-    const averageMealsPerDay = mealPosts.length / days
-    const averagePoopsPerDay = poopPosts.length / days
-
-    // 健康スコアの計算（簡易版）
-    let healthScore = 70 // ベーススコア
-
-    // 食事の一貫性
-    if (averageMealsPerDay >= 1 && averageMealsPerDay <= 3) healthScore += 10
-    if (mealPosts.length > 0) healthScore += 5
-
-    // 排泄の一貫性
-    if (averagePoopsPerDay >= 1 && averagePoopsPerDay <= 4) healthScore += 10
-    if (poopPosts.length > 0) healthScore += 5
-
-    // 感情記録の充実度
-    if (emotionPosts.length > 0) healthScore += 10
-
-    healthScore = Math.min(100, healthScore)
-
-    // アドバイスの生成
-    const recommendations = generateRecommendations(mealPosts, poopPosts, emotionPosts, averageMealsPerDay, averagePoopsPerDay)
-    const alerts = generateAlerts(mealPosts, poopPosts, emotionPosts, averageMealsPerDay, averagePoopsPerDay)
-
-    return {
-      period: period === 'week' ? '1週間' : period === 'month' ? '1ヶ月' : '3ヶ月',
-      mealCount: mealPosts.length,
-      poopCount: poopPosts.length,
-      emotionCount: emotionPosts.length,
-      averageMealsPerDay,
-      averagePoopsPerDay,
-      consistency: Math.round((posts.length / days) * 100),
-      moodTrend: analyzeMoodTrend(emotionPosts),
-      healthScore,
-      recommendations,
-      alerts
-    }
-  }, [])
 
   const generateRecommendations = (mealPosts: OtayoriPost[], poopPosts: OtayoriPost[], emotionPosts: OtayoriPost[], avgMeals: number, avgPoops: number): string[] => {
     const recommendations = []

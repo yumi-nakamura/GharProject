@@ -42,7 +42,7 @@ export default function DateTimePicker({ value, onChange, label = "投稿日時"
     }
     
     isInitialized.current = true
-  }, []) // 空の依存配列で初期化のみ実行
+  }, [onChange, value]) // 依存関係を追加
 
   // 日付変更時の処理
   const handleDateChange = (newDate: string) => {

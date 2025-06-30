@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
+import { User } from "@supabase/supabase-js"
 import { ChevronLeft, ChevronRight, Heart, Bone, Bubbles, Activity, Plus, Shield, Users, Zap, Award, Star, HeartPulse, PawPrint, LayoutDashboard, Dog } from "lucide-react"
 import Link from "next/link"
 
@@ -28,15 +29,53 @@ interface DogStats {
 export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [authInitialized, setAuthInitialized] = useState(false)
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setIsLoggedIn(!!user)
-      setLoading(false)
+      try {
+        console.log('認証チェック開始...')
+        const result = await supabase.auth.getUser()
+        console.log('getUser返り値:', result)
+        const { data: { user } } = result
+        console.log('認証結果:', { user: !!user })
+        setIsLoggedIn(!!user)
+        setCurrentUser(user)
+      } catch (error) {
+        console.error('認証チェックでエラーが発生:', error)
+        setIsLoggedIn(false)
+      } finally {
+        console.log('認証チェック完了、ローディング終了')
+        setLoading(false)
+        setAuthInitialized(true)
+      }
     }
+
     checkAuth()
+
+    // 認証状態の変更を監視
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('認証状態変更:', event, session?.user)
+      setCurrentUser(session?.user || null)
+      setIsLoggedIn(!!session?.user)
+      
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        // 認証状態が更新されたら投稿を再取得
+        await fetchCommunityPosts(session?.user || null)
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
+
+  useEffect(() => {
+    if (authInitialized && currentUser) {
+      fetchCommunityPosts(currentUser)
+    }
+  }, [authInitialized, currentUser])
 
   if (loading) {
     return (
@@ -251,7 +290,7 @@ function LandingPage() {
       <footer className="py-8 px-4 bg-gray-800 text-white">
         <div className="container mx-auto text-center">
           <p className="text-gray-400">
-            © 2024 OTAYORI. 愛犬との思い出を大切に。
+            © 2025 OTAYORI. 愛犬との思い出を大切に。
           </p>
         </div>
       </footer>
@@ -573,3 +612,10 @@ const ActionLink = ({ icon, label, href, gradient }: { icon: React.ReactNode, la
     </button>
   </Link>
 )
+
+function fetchCommunityPosts(user: User | null) {
+  // 引数で渡されたユーザー情報を使用
+  const authUser = user
+  // 認証ユーザー情報を確実に使用
+  console.log('コミュニティ投稿取得:', authUser)
+}

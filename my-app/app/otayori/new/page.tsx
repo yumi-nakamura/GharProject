@@ -2,43 +2,86 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/client'
+import { User } from '@supabase/supabase-js'
 import EntryForm from '@/components/otayori/EntryForm'
 import type { DogProfile } from '@/types/dog'
-
-const supabase = createClient()
 
 export default function OtayoriNewPage() {
   const [dogs, setDogs] = useState<DogProfile[]>([])
   const [loading, setLoading] = useState(true)
+  const [authInitialized, setAuthInitialized] = useState(false)
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
 
   useEffect(() => {
-    const fetchUserDogs = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setLoading(false)
-        return
+    const supabase = createClient()
+    
+    // 初期認証状態を取得
+    const initializeAuth = async () => {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser()
+        
+        if (error) {
+          console.error('初期認証状態取得エラー:', error)
+        } else {
+          console.log('初期認証状態:', user)
+          setCurrentUser(user)
+        }
+        setAuthInitialized(true)
+      } catch (error) {
+        console.error('初期認証状態取得に失敗:', error)
+        setAuthInitialized(true)
       }
-
-      const { data: rels } = await supabase.from('dog_user_relations').select('dog_id').eq('user_id', user.id)
-      const dogIdsFromRels = rels?.map(r => r.dog_id) || []
-      const { data: dogsFromOwnerId } = await supabase.from('dogs').select('id').eq('owner_id', user.id)
-      const dogIdsFromOwner = dogsFromOwnerId?.map(d => d.id) || []
-      const allDogIds = [...new Set([...dogIdsFromRels, ...dogIdsFromOwner])]
-
-      if (allDogIds.length > 0) {
-        const { data: dogData } = await supabase
-          .from('dogs')
-          .select('*')
-          .in('id', allDogIds)
-          .or('is_deleted.is.null,is_deleted.eq.false')
-          .order('created_at', { ascending: false })
-        if (dogData) setDogs(dogData)
-      }
-      setLoading(false)
     }
 
-    fetchUserDogs()
+    initializeAuth()
+
+    // 認証状態の変更を監視
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('認証状態変更:', event, session?.user)
+      setCurrentUser(session?.user || null)
+      
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        // 認証状態が更新されたら犬の情報を再取得
+        await fetchUserDogs(session?.user || null)
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
+
+  // 認証が初期化されたら犬の情報を取得
+  useEffect(() => {
+    if (authInitialized) {
+      fetchUserDogs(currentUser)
+    }
+  }, [authInitialized, currentUser])
+
+  const fetchUserDogs = async (user: User | null) => {
+    if (!user) {
+      setLoading(false)
+      return
+    }
+
+    const supabase = createClient()
+    const { data: rels } = await supabase.from('dog_user_relations').select('dog_id').eq('user_id', user.id)
+    const dogIdsFromRels = rels?.map(r => r.dog_id) || []
+    const { data: dogsFromOwnerId } = await supabase.from('dogs').select('id').eq('owner_id', user.id)
+    const dogIdsFromOwner = dogsFromOwnerId?.map(d => d.id) || []
+    const allDogIds = [...new Set([...dogIdsFromRels, ...dogIdsFromOwner])]
+
+    if (allDogIds.length > 0) {
+      const { data: dogData } = await supabase
+        .from('dogs')
+        .select('*')
+        .in('id', allDogIds)
+        .or('is_deleted.is.null,is_deleted.eq.false')
+        .order('created_at', { ascending: false })
+      if (dogData) setDogs(dogData)
+    }
+    setLoading(false)
+  }
 
   if (loading) {
     return (
