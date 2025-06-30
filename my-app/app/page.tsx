@@ -1,9 +1,8 @@
 "use client"
 import { useEffect, useState } from "react"
 import { createClient } from "@/utils/supabase/client"
-import { User } from "@supabase/supabase-js"
 import { useAuth } from "@/components/layout/AuthProvider"
-import { ChevronLeft, ChevronRight, Heart, Bone, Bubbles, Activity, Plus, Shield, Users, Zap, Award, Star, HeartPulse, PawPrint, LayoutDashboard, Dog } from "lucide-react"
+import { ChevronLeft, ChevronRight, Heart, Bone, Bubbles, Activity, Plus, Shield, Users, Zap, Award, Star, LayoutDashboard, Dog, Settings } from "lucide-react"
 import Link from "next/link"
 
 const supabase = createClient()
@@ -27,17 +26,40 @@ interface DogStats {
   emotionCount: number
 }
 
+interface CommunityPost {
+  id: string
+  dog_id: string
+  user_id: string
+  type: string
+  content: string
+  datetime: string
+  photo_url?: string
+  mood?: string
+  tags?: string[]
+  custom_datetime?: string
+  poop_guard_password?: string
+  is_poop_guarded?: boolean
+  dog?: DogProfile
+  user?: {
+    id: string
+    user_id: string
+    name: string
+    email: string
+    avatar_url?: string
+  }
+}
+
 export default function HomePage() {
   const { user, loading, initialized } = useAuth()
-  const [communityPosts, setCommunityPosts] = useState<any[]>([])
+  const [communityPosts, setCommunityPosts] = useState<CommunityPost[]>([])
 
   useEffect(() => {
     if (initialized && user) {
-      fetchCommunityPosts(user)
+      fetchCommunityPosts()
     }
   }, [initialized, user])
 
-  const fetchCommunityPosts = async (currentUser: User) => {
+  const fetchCommunityPosts = async () => {
     try {
       console.log('コミュニティ投稿取得開始')
       
@@ -394,7 +416,7 @@ function FeatureSection({ title, subtitle, description, features, image, reverse
 }
 
 // ログイン済みユーザー向けのダッシュボード（既存のコードを再利用）
-function Dashboard({ communityPosts }: { communityPosts: any[] }) {
+function Dashboard({ communityPosts }: { communityPosts: CommunityPost[] }) {
   const [dogs, setDogs] = useState<DogProfile[]>([])
   const [selectedDogIndex, setSelectedDogIndex] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -564,60 +586,110 @@ function Dashboard({ communityPosts }: { communityPosts: any[] }) {
                   <Plus size={20} />
                 </Link>
               </div>
-              
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <StatCard icon={<Bone className="text-orange-500" />} label="ごはん" value={dogStats?.mealCount || 0} />
-                <StatCard icon={<Bubbles className="text-green-500" />} label="うんち" value={dogStats?.poopCount || 0} />
-                <StatCard icon={<Heart className="text-pink-500" />} label="きもち" value={dogStats?.emotionCount || 0} />
-              </div>
 
-              <div className="space-y-3">
-                <QuickLogButton icon={<Bone className="text-orange-500" />} label="ごはんを記録" href="/otayori/new?type=meal" />
-                <QuickLogButton icon={<Bubbles className="text-green-500" />} label="うんちを記録" href="/otayori/new?type=poop" />
-                <QuickLogButton icon={<Heart className="text-pink-500" />} label="きもちを記録" href="/otayori/new?type=emotion" />
+              {dogStats && (
+                <div className="grid grid-cols-2 gap-4">
+                  <StatCard icon={<Bone />} label="食事" value={dogStats.mealCount} />
+                  <StatCard icon={<Bubbles />} label="排泄" value={dogStats.poopCount} />
+                  <StatCard icon={<Heart />} label="感情" value={dogStats.emotionCount} />
+                  <StatCard icon={<Activity />} label="総記録" value={dogStats.todayPosts} />
+                </div>
+              )}
+            </div>
+
+            {/* 統計情報 */}
+            {dogStats && (
+              <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border-2 border-yellow-200 transform hover:scale-105 transition-all duration-300">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <LayoutDashboard className="text-yellow-500" />
+                  統計情報
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-yellow-600">{dogStats.weeklyPosts}</div>
+                    <div className="text-sm text-gray-600">今週の記録</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-yellow-600">{dogStats.streakDays}</div>
+                    <div className="text-sm text-gray-600">連続記録日</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* クイックアクション */}
+            <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border-2 border-green-200 transform hover:scale-105 transition-all duration-300">
+              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <Zap className="text-green-500" />
+                クイックアクション
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <QuickLogButton icon={<Bone />} label="食事記録" href="/otayori/new" />
+                <QuickLogButton icon={<Bubbles />} label="排泄記録" href="/otayori/new" />
+                <QuickLogButton icon={<Heart />} label="感情記録" href="/otayori/new" />
+                <QuickLogButton icon={<Activity />} label="その他" href="/otayori/new" />
               </div>
             </div>
+
+            {/* コミュニティ投稿 */}
+            {communityPosts.length > 0 && (
+              <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border-2 border-blue-200 transform hover:scale-105 transition-all duration-300">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <Users className="text-blue-500" />
+                    コミュニティ
+                  </h3>
+                  <Link href="/community" className="text-sm text-blue-600 hover:text-blue-800">
+                    もっと見る →
+                  </Link>
+                </div>
+                <div className="space-y-3">
+                  {communityPosts.slice(0, 3).map((post) => (
+                    <div key={post.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      {post.dog?.image_url && (
+                        <img 
+                          src={post.dog.image_url} 
+                          alt={post.dog.name} 
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-gray-800 truncate">
+                          {post.dog?.name || 'わんちゃん'}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate">
+                          {post.content}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* アクションリンク */}
             <div className="grid grid-cols-2 gap-4">
               <ActionLink 
-                icon={<HeartPulse className="w-6 h-6 text-white" />} 
-                label="健康レポート" 
-                href="/health-report" 
-                gradient="from-blue-500 to-cyan-500" 
-              />
-              <ActionLink 
-                icon={<Dog className="w-6 h-6 text-white" />} 
-                label="おともだち" 
-                href="/community" 
-                gradient="from-green-500 to-emerald-500" 
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <ActionLink 
-                icon={<PawPrint className="w-6 h-6 text-white" />} 
-                label="タイムライン" 
-                href={`/dog/${selectedDog.id}/timeline`} 
+                icon={<Dog />} 
+                label="プロフィール" 
+                href="/profile" 
                 gradient="from-purple-500 to-pink-500" 
               />
               <ActionLink 
-                icon={<LayoutDashboard className="w-6 h-6 text-white" />} 
-                label="OTAYORI profile" 
-                href="/profile" 
-                gradient="from-indigo-500 to-blue-500" 
+                icon={<Settings />} 
+                label="設定" 
+                href="/settings" 
+                gradient="from-gray-500 to-gray-700" 
               />
             </div>
           </>
         ) : (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4 animate-bounce">🐕</div>
+          <div className="text-center py-8">
+            <div className="text-6xl mb-4">🐕</div>
             <h2 className="text-xl font-bold text-gray-800 mb-2">わんちゃんを登録しましょう</h2>
-            <p className="text-gray-600 mb-6">愛犬の情報を登録して、OTAYORIを始めましょう</p>
-            <Link href="/dog/register">
-              <button className="bg-gradient-to-r from-orange-500 to-pink-500 text-white px-6 py-3 rounded-full font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-300">
-                わんちゃんを登録
-              </button>
+            <p className="text-gray-600 mb-6">愛犬のプロフィールを登録して、記録を始めましょう</p>
+            <Link href="/dog/register" className="bg-gradient-to-r from-orange-500 to-pink-500 text-white px-6 py-3 rounded-full font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-300">
+              わんちゃんを登録
             </Link>
           </div>
         )}
