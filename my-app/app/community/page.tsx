@@ -565,7 +565,7 @@ export default function CommunityPage() {
                         <p className="font-medium text-gray-800">
                           {post.user?.name || '名前未設定'}
                         </p>
-                        <p className="text-xs text-gray-500">{post.dog?.name || 'わんちゃん未設定'}</p>
+                        <p className="text-xs text-gray-500">{post.dog && post.dog.name ? post.dog.name : 'わんちゃん未設定'}</p>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1">

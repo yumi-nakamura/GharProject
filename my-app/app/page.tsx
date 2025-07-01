@@ -614,9 +614,9 @@ function Dashboard({ communityPosts }: { communityPosts: CommunityPost[] }) {
                 さっそくOTAYORIを記録しよう！
               </h3>
               <div className="flex justify-center gap-6">
-                <QuickLogButton icon={<Bone />} label="ごはん" href="/otayori/new" />
-                <QuickLogButton icon={<Bubbles />} label="うんち" href="/otayori/new" />
-                <QuickLogButton icon={<Heart />} label="きもち" href="/otayori/new" />
+                <QuickLogButton icon={<Bone />} label="ごはん" href="/otayori/new?type=meal" />
+                <QuickLogButton icon={<Bubbles />} label="うんち" href="/otayori/new?type=poop" />
+                <QuickLogButton icon={<Heart />} label="きもち" href="/otayori/new?type=emotion" />
               </div>
             </div>
 
