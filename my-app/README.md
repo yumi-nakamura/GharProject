@@ -20,15 +20,15 @@ OTAYORIは、愛犬の健康管理と記録を目的としたWebアプリケー�
 - **予約投稿**: 日時指定による投稿予約機能
 
 ### 📊 健康管理
-- 投稿履歴のタイムライン表示
+- 投稿履歴のタイムライン表示（多頭飼い対応 `/timeline` で全犬まとめて表示）
 - 週次・月次サマリー
-- 健康レポート機能
+- 健康レポート機能（トップページから横長ボタンで遷移可能）
 - 統計データの可視化
 
 ### 🔐 セキュリティ
 - Supabase認証による安全なログイン
 - Row Level Security (RLS)によるデータ保護
-- プープバッグ機能（パスワード保護）
+- プープバッグ機能（パスワード保護、犬の誕生日で解除）
 
 ## 技術スタック
 
@@ -62,14 +62,14 @@ my-app/
 │   │       └── page.tsx
 │   ├── dog/                     # 犬関連ページ
 │   │   ├── [id]/
-│   │   │   ├── page.tsx         # 犬のプロフィール
-│   │   │   └── timeline/
-│   │   │       └── page.tsx     # 犬のタイムライン
+│   │   │   └── page.tsx         # 犬のプロフィール（timeline削除済み）
 │   │   ├── edit/
 │   │   │   └── [id]/
 │   │   │       └── page.tsx     # 犬の編集
 │   │   └── register/
 │   │       └── page.tsx         # 犬の登録
+│   ├── timeline/                # タイムライン（多頭飼い対応）
+│   │   └── page.tsx
 │   ├── otayori/                 # おたより関連
 │   │   └── new/
 │   │       └── page.tsx         # おたより投稿
@@ -91,68 +91,21 @@ my-app/
 │       └── page.tsx
 ├── components/                  # Reactコンポーネント
 │   ├── auth/                    # 認証コンポーネント
-│   │   ├── LoginForm.tsx
-│   │   └── SignupForm.tsx
 │   ├── common/                  # 共通コンポーネント
-│   │   ├── Button.tsx
-│   │   ├── DateTimePicker.tsx   # 日時選択
-│   │   ├── ImageUploader.tsx
-│   │   ├── TagSelector.tsx      # タグ選択
-│   │   ├── TextArea.tsx
-│   │   ├── TextInput.tsx
-│   │   └── ToggleSwitch.tsx
 │   ├── dog/                     # 犬関連コンポーネント
-│   │   ├── DogForm.tsx
-│   │   ├── DogProfile.tsx
-│   │   └── DogStats.tsx
 │   ├── layout/                  # レイアウトコンポーネント
-│   │   ├── FooterNav.tsx
-│   │   ├── Navbar.tsx
-│   │   ├── PageWrapper.tsx
-│   │   └── ProfileStatusProvider.tsx
 │   ├── notifications/           # 通知コンポーネント
-│   │   ├── NotificationItem.tsx
-│   │   └── NotificationList.tsx
 │   ├── otayori/                 # おたよりコンポーネント
-│   │   ├── Card.tsx             # 投稿カード
-│   │   ├── DogTimeline.tsx      # 犬のタイムライン
-│   │   ├── EntryForm.tsx        # 投稿フォーム
-│   │   ├── PoopAnimation.tsx    # 投稿後アニメーション
-│   │   ├── PoopImageGuard.tsx   # プープバッグ
-│   │   ├── ReactionBar.tsx
-│   │   └── WeeklySummaryCard.tsx
 │   ├── profile/                 # プロフィールコンポーネント
-│   │   ├── ProfileAchievements.tsx
-│   │   ├── ProfileEditForm.tsx
-│   │   ├── ProfileTimeline.tsx
-│   │   └── UserCard.tsx
 │   ├── settings/                # 設定コンポーネント
-│   │   ├── DogListItem.tsx
-│   │   └── ReminderSettings.tsx
 │   ├── community/               # コミュニティコンポーネント
-│   │   └── CommunityFeed.tsx
 │   └── user/                    # ユーザー関連コンポーネント
-│       └── UserCard.tsx
 ├── types/                       # TypeScript型定義
-│   ├── dog.ts
-│   ├── notification.ts
-│   ├── otayori.ts
-│   ├── settings.ts
-│   └── user.ts
 ├── utils/                       # ユーティリティ
 │   ├── supabase/                # Supabase関連
-│   │   ├── client.ts
-│   │   ├── middleware.ts
-│   │   └── server.ts
-│   ├── mcp/                     # MCP関連
-│   │   ├── client.ts
-│   │   ├── server.js
-│   │   └── server.ts
+│   ├── imageHelpers.ts
 │   ├── otayoriHelpers.ts
 │   └── userStats.ts
-├── styles/                      # スタイル
-│   └── theme.ts
-├── public/                      # 静的ファイル
 ├── middleware.ts                # Next.jsミドルウェア
 ├── next.config.ts               # Next.js設定
 ├── tsconfig.json                # TypeScript設定
@@ -241,23 +194,24 @@ npm run mcp:server
 - 犬の登録・編集・削除
 - おたより投稿（ごはん・うんち・きもち）
 - タグ機能
-- 予約投稿機能
 - プープバッグ機能
 - タイムライン表示
 - 健康レポート
-- 設定画面
+- 設定画面（犬設定）
 - レスポンシブデザイン
+- リアクション機能（いいね）
 
 ### 🚧 開発中
 - コミュニティ機能
 - 通知システム
-- リアクション機能
+
 
 ### 📋 今後の予定
 - 画像最適化
-- パフォーマンス向上
-- テスト環境構築
-- CI/CDパイプライン
+- 健康アドバイスをAIで。うんち診断。
+- 主治医や家族との連携機能
+- シェア機能
+- リマインダー機能
 
 ## セキュリティ
 
@@ -277,9 +231,16 @@ npm run mcp:server
 
 このプロジェクトはMITライセンスの下で公開されています。
 
-## 貢献
 
-プルリクエストやイシューの報告を歓迎します。貢献する前に、コーディング規約を確認してください。
+## 変更履歴
+
+- 2025/05:  
+  - タイムラインを多頭飼い対応 `/timeline` に統合
+  - プロフィール・編集・カードUI刷新
+  - プープバッグ機能のUI・認証・文言改善
+  - トップページUI刷新・健康レポートボタン追加
+  - コミュニティで犬名が正しく表示されるよう修正
+  - Vercel環境変数の注意をREADMEに追記
 
 ---
 
