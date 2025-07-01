@@ -148,19 +148,6 @@ export function ProfileTimeline() {
     }
   }
 
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'meal':
-        return 'ごはん'
-      case 'poop':
-        return 'うんち'
-      case 'emotion':
-        return 'きもち'
-      default:
-        return 'おたより'
-    }
-  }
-
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-8">
