@@ -138,13 +138,13 @@ export function ProfileTimeline() {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'meal':
-        return <Salad size={16} className="text-green-500" />
+        return <Salad size={32} className="text-green-500" />
       case 'poop':
-        return <Bubbles size={16} className="text-brown-500" />
+        return <Bubbles size={32} className="text-brown-500" />
       case 'emotion':
-        return <MessageCircleHeart size={16} className="text-pink-500" />
+        return <MessageCircleHeart size={32} className="text-pink-500" />
       default:
-        return <Camera size={16} className="text-blue-500" />
+        return <Camera size={32} className="text-blue-500" />
     }
   }
 
@@ -223,18 +223,15 @@ export function ProfileTimeline() {
           const displayDatetime = item.custom_datetime || item.datetime
           return (
             <div key={item.id} className="bg-white rounded-lg p-4 shadow-sm border hover:shadow-md transition-shadow">
+              {/* アイコンを中央上部に大きく表示 */}
+              <div className="flex flex-col items-center mb-2">
+                {getTypeIcon(item.type)}
+                {item.dogs && (
+                  <span className="text-xs text-gray-500 mt-1">{item.dogs.name}</span>
+                )}
+              </div>
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  {getTypeIcon(item.type)}
-                  <span className="font-medium text-gray-800">
-                    {getTypeLabel(item.type)}
-                  </span>
-                  {item.dogs && (
-                    <span className="text-sm text-gray-500">
-                      ({item.dogs.name})
-                    </span>
-                  )}
-                </div>
+                <div />
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1 text-xs text-gray-500">
                     <Clock size={12} />
