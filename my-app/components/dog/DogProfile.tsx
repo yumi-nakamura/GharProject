@@ -4,7 +4,7 @@ import type { DogProfile as DogProfileType } from "@/types/dog"
 export function DogProfile({ dog }: { dog: DogProfileType }) {
   return (
     <div className="flex items-center space-x-4 p-4 border rounded">
-      <img src={dog.avatarUrl || "/images/default-avatar.png"} alt={dog.name} className="w-16 h-16 rounded-full object-cover" />
+      <img src={dog.image_url || "/images/default-avatar.png"} alt={dog.name} className="w-16 h-16 rounded-full object-cover" />
       <div>
         <p className="font-bold text-lg">{dog.name}</p>
         <p className="text-sm text-gray-600">{dog.breed}</p>

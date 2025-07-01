@@ -1,5 +1,5 @@
 "use client"
-import DogForm from "@/components/dog/DogForm"
+import DogProfileEditForm from "@/components/dog/DogProfileEditForm"
 
 export default function DogRegisterPage() {
   // スキップ時の処理
@@ -17,8 +17,8 @@ export default function DogRegisterPage() {
     }
   }
   return (
-    <main className="p-4">
-      <DogForm onComplete={handleComplete} />
+    <main className="p-4 bg-gradient-to-br from-orange-50 to-pink-50 min-h-screen">
+      <DogProfileEditForm onComplete={handleComplete} />
       <div className="mt-6 text-center">
         <button
           className="text-sm text-gray-500 underline hover:text-orange-500"

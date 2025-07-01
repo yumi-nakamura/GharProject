@@ -1,14 +1,14 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { OtayoriRecord } from '@/types/otayori'
 import { DogProfile } from '@/types/dog'
 import { UserProfile } from '@/types/user'
-import { User } from '@supabase/supabase-js'
 import LikeButton from '@/components/community/LikeButton'
 import { Utensils, Heart, Search, Filter, X, PawPrint } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/components/layout/AuthProvider'
 
 interface CommunityPost extends OtayoriRecord {
   dog: DogProfile;
@@ -27,12 +27,11 @@ export default function CommunityPage() {
   const [posts, setPosts] = useState<CommunityPost[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'meal' | 'emotion'>('all')
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
-  const [authInitialized, setAuthInitialized] = useState(false)
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = 18;
   const router = useRouter()
-  
+  const { user, initialized, loading: authLoading } = useAuth();
+
   // 検索関連のstate
   const [searchQuery, setSearchQuery] = useState('')
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false)
@@ -43,160 +42,58 @@ export default function CommunityPage() {
     tags: []
   })
 
+  // 未認証時はリダイレクト
   useEffect(() => {
-    const supabase = createClient()
-    
-    // 初期認証状態を取得
-    const initializeAuth = async () => {
-      try {
-        const { data: { user }, error } = await supabase.auth.getUser()
-        
-        if (error) {
-          console.error('初期認証状態取得エラー:', error)
-        } else {
-          console.log('初期認証状態:', user)
-          setCurrentUser(user)
-        }
-        setAuthInitialized(true)
-      } catch (error) {
-        console.error('初期認証状態取得に失敗:', error)
-        setAuthInitialized(true)
-      }
+    if (initialized && !user) {
+      router.replace('/login');
     }
+  }, [initialized, user, router]);
 
-    initializeAuth()
-
-    // 認証状態の変更を監視
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('認証状態変更:', event, session?.user)
-      setCurrentUser(session?.user || null)
-      
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        // 認証状態が更新されたら投稿を再取得
-        await fetchCommunityPosts(session?.user || null)
-      }
-    })
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [])
-
-  // 認証が初期化されたら投稿を取得
-  useEffect(() => {
-    if (authInitialized) {
-      fetchCommunityPosts(currentUser)
-    }
-  }, [authInitialized, currentUser])
-
-  const fetchCommunityPosts = async (user: User | null) => {
-    // 未認証時はログインページにリダイレクト
-    if (!user) {
-      router.replace("/login")
-      return
-    }
-
+  // 投稿取得
+  const fetchCommunityPosts = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
     try {
-      console.log('コミュニティ投稿取得開始')
-      const supabase = createClient()
-      
-      // 現在のユーザー情報を取得
-      const { data: { user: currentAuthUser }, error: authError } = await supabase.auth.getUser()
-      console.log('現在の認証ユーザー:', currentAuthUser)
-      console.log('認証エラー:', authError)
-      
-      // 引数で渡されたユーザー情報を使用
-      const authUser = user || currentAuthUser
-      console.log('使用する認証ユーザー:', authUser)
-      
-      // おたよりデータを取得（RLSポリシーを考慮）
-      console.log('otayoriテーブルからデータ取得中...')
+      const supabase = createClient();
+      // おたよりデータを取得
       const { data: otayoriData, error: otayoriError } = await supabase
         .from('otayori')
         .select('*')
         .order('created_at', { ascending: false })
-
-      console.log('otayoriData:', otayoriData)
-      console.log('otayoriError:', otayoriError)
-
-      if (otayoriError) {
-        console.error('otayori取得エラー:', otayoriError)
-        throw otayoriError
-      }
-
+      if (otayoriError) throw otayoriError;
       if (!otayoriData || otayoriData.length === 0) {
-        console.log('otayoriデータが空です')
         setPosts([])
         setLoading(false)
         return
       }
-
       // 犬とユーザー情報を取得
       const dogIds = [...new Set(otayoriData.map(post => post.dog_id))]
       const userIds = [...new Set(otayoriData.map(post => post.user_id))]
-      
-      console.log('dogIds:', dogIds)
-      console.log('userIds:', userIds)
-
-      console.log('dogsテーブルからデータ取得中...')
       const { data: dogsData, error: dogsError } = await supabase
         .from('dogs')
         .select('*')
         .in('id', dogIds)
-
-      console.log('dogsData:', dogsData)
-      console.log('dogsError:', dogsError)
-
-      if (dogsError) {
-        console.error('dogs取得エラー:', dogsError)
-        throw dogsError
-      }
-
-      console.log('user_profilesテーブルからデータ取得中...')
+      if (dogsError) throw dogsError;
       const { data: usersData, error: usersError } = await supabase
         .from('user_profiles')
         .select('*')
         .in('user_id', userIds)
-
-      console.log('usersData:', usersData)
-      console.log('userIds:', userIds)
-      console.log('usersError:', usersError)
-
-      if (usersError) {
-        console.error('user_profiles取得エラー:', usersError)
-        throw usersError
-      }
-
+      if (usersError) throw usersError;
       // いいね数を取得
-      console.log('likesテーブルからデータ取得中...')
       const { data: likesData, error: likesError } = await supabase
         .from('likes')
         .select('otayori_id')
         .in('otayori_id', otayoriData.map(post => post.id))
-
-      console.log('likesData:', likesData)
-      console.log('likesError:', likesError)
-
-      if (likesError) {
-        console.error('likes取得エラー:', likesError)
-        throw likesError
-      }
-
-      // いいね数をカウント
+      if (likesError) throw likesError;
       const likesCountMap = new Map<string, number>()
       likesData?.forEach(like => {
         const count = likesCountMap.get(like.otayori_id) || 0
         likesCountMap.set(like.otayori_id, count + 1)
       })
-
-      console.log('likesCountMap:', likesCountMap)
-
-      // データをキャメルケースにマッピング
       const combinedPosts: CommunityPost[] = otayoriData.map(post => {
         const dog = dogsData?.find(d => d.id === post.dog_id)
-        const user = usersData?.find(u => u.user_id === post.user_id)
+        const userProfile = usersData?.find(u => u.user_id === post.user_id)
         const likes_count = likesCountMap.get(post.id) || 0
-
         return {
           id: post.id,
           dogId: post.dog_id,
@@ -211,22 +108,27 @@ export default function CommunityPage() {
           poopGuardPassword: post.poop_guard_password,
           isPoopGuarded: post.is_poop_guarded,
           dog,
-          user,
+          user: userProfile,
           likes_count
         }
       })
-
-      console.log('結合後の投稿データ:', combinedPosts)
       setPosts(combinedPosts)
       setLoading(false)
     } catch (error) {
       console.error('コミュニティ投稿取得エラー:', error)
       setLoading(false)
     }
-  }
+  }, [user]);
 
-  // 認証が初期化され、未認証の場合はローディング表示
-  if (!authInitialized) {
+  // 認証済みになったら投稿取得
+  useEffect(() => {
+    if (initialized && user) {
+      fetchCommunityPosts();
+    }
+  }, [initialized, user, fetchCommunityPosts]);
+
+  // 認証が初期化されていない間はローディング
+  if (!initialized || authLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
         <div className="text-6xl animate-bounce mb-4">🐾</div>
@@ -250,9 +152,9 @@ export default function CommunityPage() {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       const matchesContent = post.content?.toLowerCase().includes(query)
-      const matchesUserName = post.user.name?.toLowerCase().includes(query)
-      const matchesDogName = post.dog.name?.toLowerCase().includes(query)
-      const matchesBreed = post.dog.breed?.toLowerCase().includes(query)
+      const matchesUserName = post.user?.name?.toLowerCase().includes(query)
+      const matchesDogName = post.dog?.name?.toLowerCase().includes(query)
+      const matchesBreed = post.dog?.breed?.toLowerCase().includes(query)
       const matchesTags = post.tags?.some(tag => tag.toLowerCase().includes(query))
       
       if (!matchesContent && !matchesUserName && !matchesDogName && !matchesBreed && !matchesTags) {
@@ -263,21 +165,21 @@ export default function CommunityPage() {
     // 詳細検索フィルター
     if (showAdvancedSearch) {
       // 体重フィルター
-      if (advancedFilters.weightRange.min !== null && post.dog.weight) {
+      if (advancedFilters.weightRange.min !== null && post.dog?.weight) {
         const weight = parseFloat(post.dog.weight.toString())
         if (weight < advancedFilters.weightRange.min) return false
       }
-      if (advancedFilters.weightRange.max !== null && post.dog.weight) {
+      if (advancedFilters.weightRange.max !== null && post.dog?.weight) {
         const weight = parseFloat(post.dog.weight.toString())
         if (weight > advancedFilters.weightRange.max) return false
       }
       
       // 年齢フィルター
-      if (advancedFilters.ageRange.min !== null && post.dog.birthday) {
+      if (advancedFilters.ageRange.min !== null && post.dog?.birthday) {
         const age = calculateAge(post.dog.birthday)
         if (age < advancedFilters.ageRange.min) return false
       }
-      if (advancedFilters.ageRange.max !== null && post.dog.birthday) {
+      if (advancedFilters.ageRange.max !== null && post.dog?.birthday) {
         const age = calculateAge(post.dog.birthday)
         if (age > advancedFilters.ageRange.max) return false
       }
@@ -627,7 +529,7 @@ export default function CommunityPage() {
         {/* 投稿一覧 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {pagedPosts.map((post) => {
-            const isOwnPost = currentUser && post.userId === currentUser.id
+            const isOwnPost = user && post.userId === user.id
             return (
               <div
                 key={post.id}
@@ -657,20 +559,20 @@ export default function CommunityPage() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                        {post.user.name?.charAt(0) || 'U'}
+                        {post.user?.name?.charAt(0) || 'U'}
                       </div>
                       <div>
                         <p className="font-medium text-gray-800">
-                          {post.user.name || '名前未設定'}
+                          {post.user?.name || '名前未設定'}
                         </p>
-                        <p className="text-xs text-gray-500">{post.dog.name}</p>
+                        <p className="text-xs text-gray-500">{post.dog?.name || 'わんちゃん未設定'}</p>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <span className="text-xs text-gray-400">
                         {new Date(post.datetime).toLocaleDateString('ja-JP')}
                       </span>
-                      {currentUser && post.userId === currentUser.id && (
+                      {user && post.userId === user.id && (
                         <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
                           うちのコ
                         </span>

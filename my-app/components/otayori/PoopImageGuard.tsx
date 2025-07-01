@@ -2,14 +2,16 @@
 "use client"
 
 import React, { useState, ChangeEvent } from "react"
-import { Lock, Eye, AlertCircle, Gift } from "lucide-react"
+import { Lock, Eye, AlertCircle, MailSearch } from "lucide-react"
 
 export default function PoopImageGuard({
   imageUrl,
   expectedPassword,
+  dogName,
 }: {
   imageUrl: string
   expectedPassword: string
+  dogName: string
 }) {
   const [input, setInput] = useState("")
   const [unlocked, setUnlocked] = useState(false)
@@ -17,14 +19,23 @@ export default function PoopImageGuard({
   const [isShaking, setIsShaking] = useState(false)
 
   const handleUnlock = () => {
+    console.log('PoopImageGuard: パスワード認証試行', { 
+      input, 
+      expectedPassword, 
+      dogName,
+      isMatch: input === expectedPassword 
+    })
+    
     if (input === expectedPassword) {
       setUnlocked(true)
       setError(false)
+      console.log('PoopImageGuard: パスワード認証成功')
     } else {
       setError(true)
       setIsShaking(true)
       setTimeout(() => setIsShaking(false), 500)
       setTimeout(() => setError(false), 2000)
+      console.log('PoopImageGuard: パスワード認証失敗')
     }
   }
 
@@ -55,7 +66,7 @@ export default function PoopImageGuard({
       {/* プープバッグのリボン */}
       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
         <div className="bg-red-500 text-white px-4 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-md">
-          <Gift size={12} />
+          <MailSearch size={12} />
           プープバッグ
         </div>
       </div>
@@ -64,7 +75,9 @@ export default function PoopImageGuard({
       <div className="flex justify-center mb-4 mt-2">
         <div className="relative animate-gift-bounce gift-hover">
           <div className="w-20 h-20 bg-gradient-to-br from-yellow-200 to-orange-200 rounded-full flex items-center justify-center shadow-lg border-4 border-white">
-            <div className="text-4xl">🎁</div>
+            <div className="text-4xl">
+              <MailSearch size={32} className="text-orange-600" />
+            </div>
           </div>
           <div className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold animate-pulse">
             !
@@ -74,8 +87,7 @@ export default function PoopImageGuard({
       
       <h3 className="font-bold text-yellow-800 mb-2 text-lg">プープバッグで保護されています</h3>
       <p className="text-sm text-yellow-700 mb-4">
-        この画像を確認するには、<br/>
-        <span className="font-semibold">西暦のお誕生日</span>を入力してください
+        {dogName}のお誕生日を入力してください
       </p>
       
       <div className="space-y-3 max-w-xs mx-auto">
@@ -108,7 +120,7 @@ export default function PoopImageGuard({
           onClick={handleUnlock}
           className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-lg"
         >
-          <Gift size={16} />
+          <MailSearch size={16} />
           プープバッグを開く
         </button>
       </div>

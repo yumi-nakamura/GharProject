@@ -6,6 +6,7 @@ import { OtayoriCard } from "./Card"
 import type { OtayoriRecord } from "@/types/otayori"
 import { format } from "date-fns"
 import { useRouter } from "next/navigation"
+import type { DogProfile } from "@/types/dog"
 
 const supabase = createClient()
 
@@ -22,7 +23,7 @@ function groupByDate(posts: OtayoriRecord[]) {
   }, {} as Record<string, OtayoriRecord[]>)
 }
 
-export function DogTimeline({ dogId, birthday }: { dogId: string; birthday: string }) {
+export function DogTimeline({ dogs }: { dogs: DogProfile[] }) {
   const [posts, setPosts] = useState<OtayoriRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -34,18 +35,27 @@ export function DogTimeline({ dogId, birthday }: { dogId: string; birthday: stri
     
     const fetchPosts = async () => {
       try {
+        console.log('DogTimeline: データ取得開始', { dogs, dogIds: dogs.map(d => d.id) })
+        
         // 認証状態を確認
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
+          console.log('DogTimeline: ユーザー未認証')
           router.push('/login')
           return
         }
 
+        console.log('DogTimeline: ユーザー認証済み', { userId: user.id })
+
+        // 複数の犬のIDでOTAYORIを取得
+        const dogIds = dogs.map(dog => dog.id)
         const { data, error } = await supabase
           .from("otayori")
           .select("*")
-          .eq("dog_id", dogId)
+          .in("dog_id", dogIds)
           .order("datetime", { ascending: false })
+
+        console.log('DogTimeline: クエリ結果', { data, error, count: data?.length })
 
         if (error) {
           console.error('OTAYORI取得エラー:', error)
@@ -69,6 +79,8 @@ export function DogTimeline({ dogId, birthday }: { dogId: string; birthday: stri
           isPoopGuarded: typeof item.is_poop_guarded === 'boolean' ? item.is_poop_guarded as boolean : undefined,
         }))
         
+        console.log('DogTimeline: 処理済みデータ', { posts, count: posts.length })
+        
         setPosts(posts)
         setLoading(false)
       } catch (err) {
@@ -79,7 +91,7 @@ export function DogTimeline({ dogId, birthday }: { dogId: string; birthday: stri
     }
 
     fetchPosts()
-  }, [dogId, router])
+  }, [dogs, router])
 
   const grouped = groupByDate(posts)
   const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
@@ -128,9 +140,13 @@ export function DogTimeline({ dogId, birthday }: { dogId: string; birthday: stri
             {format(new Date(date), "yyyy年M月d日 (EEE)")}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {grouped[date].map(post => (
-              <OtayoriCard key={post.id} post={post} birthday={birthday} />
-            ))}
+            {grouped[date].map(post => {
+              // 投稿に対応する犬の情報を取得
+              const dog = dogs.find(d => d.id === post.dogId)
+              return (
+                <OtayoriCard key={post.id} post={post} dog={dog || null} />
+              )
+            })}
           </div>
         </div>
       ))}

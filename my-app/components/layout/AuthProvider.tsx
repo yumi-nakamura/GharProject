@@ -24,16 +24,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initializeAuth = async () => {
       try {
         console.log('認証初期化開始...')
-        const { data: { user }, error } = await supabase.auth.getUser()
         
-        if (error) {
-          console.error('初期認証状態取得エラー:', error)
-        } else {
-          console.log('初期認証状態:', user ? 'ログイン済み' : '未ログイン')
-          setUser(user)
+        // セッションを取得
+        const { error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('セッション取得エラー:', sessionError)
+          // セッションエラーは無視して続行（未ログイン状態として扱う）
         }
+        
+        // ユーザー情報を取得
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        
+        if (userError) {
+          console.error('ユーザー取得エラー:', userError)
+          // ユーザー取得エラーも無視して続行
+        }
+        
+        console.log('初期認証状態:', user ? 'ログイン済み' : '未ログイン')
+        setUser(user)
+        
       } catch (error) {
         console.error('認証初期化エラー:', error)
+        // エラーが発生しても初期化は完了させる
       } finally {
         setLoading(false)
         setInitialized(true)

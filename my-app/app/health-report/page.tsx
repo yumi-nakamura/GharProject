@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/utils/supabase/client"
+import { useAuth } from "@/components/layout/AuthProvider"
 import type { DogProfile } from "@/types/dog"
 import {
   Calendar,
@@ -47,6 +48,7 @@ interface OtayoriPost {
 }
 
 export default function HealthReportPage() {
+  const { user, loading: authLoading, initialized } = useAuth()
   const [selectedDog, setSelectedDog] = useState<DogProfile | null>(null)
   const [dogs, setDogs] = useState<DogProfile[]>([])
   const [healthData, setHealthData] = useState<HealthData | null>(null)
@@ -119,8 +121,10 @@ export default function HealthReportPage() {
   }, [analyzeHealthData])
 
   useEffect(() => {
-    fetchDogs()
-  }, [])
+    if (initialized && !authLoading && user) {
+      fetchDogs()
+    }
+  }, [initialized, authLoading, user])
 
   useEffect(() => {
     if (selectedDog) {
@@ -130,9 +134,7 @@ export default function HealthReportPage() {
 
   const fetchDogs = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        window.location.href = "/login"
         return
       }
 
@@ -222,6 +224,29 @@ export default function HealthReportPage() {
     } else {
       return "安定"
     }
+  }
+
+  if (authLoading || !initialized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">認証状態を確認中...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🔒</div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">認証が必要です</h2>
+          <p className="text-gray-600 mb-6">ログインして健康レポートをご利用ください</p>
+        </div>
+      </div>
+    )
   }
 
   if (loading) {

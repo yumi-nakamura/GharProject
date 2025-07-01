@@ -575,12 +575,12 @@ function Dashboard({ communityPosts }: { communityPosts: CommunityPost[] }) {
               </div>
             </div>
 
-            {/* 今日の記録 - より可愛い表現に */}
+            {/* 今日のOTAYORI - 数字表示をボタン風から別のデザインに変更 */}
             <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border-2 border-orange-200 transform hover:scale-105 transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                   <Activity className="text-orange-500" />
-                  今日の記録
+                  今日のOTAYORI
                 </h3>
                 <Link href="/otayori/new" className="bg-gradient-to-r from-orange-500 to-pink-500 text-white p-2 rounded-full hover:shadow-lg transform hover:scale-110 transition-all duration-300">
                   <Plus size={20} />
@@ -605,6 +605,19 @@ function Dashboard({ communityPosts }: { communityPosts: CommunityPost[] }) {
                   <StatCard icon={<Activity />} label="総記録" value={dogStats.todayPosts} />
                 </div>
               )}
+            </div>
+
+            {/* さっそくOTAYORIを記録しよう！ - フッターのカメラアイコンのようなオレンジ色の可愛いデザイン */}
+            <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border-2 border-orange-200 transform hover:scale-105 transition-all duration-300">
+              <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                <Zap className="text-orange-500" />
+                さっそくOTAYORIを記録しよう！
+              </h3>
+              <div className="flex justify-center gap-6">
+                <QuickLogButton icon={<Bone />} label="ごはん" href="/otayori/new" />
+                <QuickLogButton icon={<Bubbles />} label="うんち" href="/otayori/new" />
+                <QuickLogButton icon={<Heart />} label="きもち" href="/otayori/new" />
+              </div>
             </div>
 
             {/* 統計情報 - より親しみやすい表現に */}
@@ -638,27 +651,13 @@ function Dashboard({ communityPosts }: { communityPosts: CommunityPost[] }) {
               </div>
             )}
 
-            {/* クイックアクション - より可愛い表現に */}
-            <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border-2 border-green-200 transform hover:scale-105 transition-all duration-300">
-              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <Zap className="text-green-500" />
-                さっそく記録しよう！
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <QuickLogButton icon={<Bone />} label="ごはんを記録" href="/otayori/new" />
-                <QuickLogButton icon={<Bubbles />} label="うんちを記録" href="/otayori/new" />
-                <QuickLogButton icon={<Heart />} label="きもちを記録" href="/otayori/new" />
-                <QuickLogButton icon={<Activity />} label="その他を記録" href="/otayori/new" />
-              </div>
-            </div>
-
-            {/* コミュニティ投稿 */}
+            {/* おともだちのOTAYORI */}
             {communityPosts.length > 0 && (
               <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border-2 border-blue-200 transform hover:scale-105 transition-all duration-300">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                     <Users className="text-blue-500" />
-                    おともだちの記録
+                    おともだちのOTAYORI
                   </h3>
                   <Link href="/community" className="text-sm text-blue-600 hover:text-blue-800">
                     もっと見る →
@@ -720,7 +719,7 @@ function Dashboard({ communityPosts }: { communityPosts: CommunityPost[] }) {
 }
 
 const StatCard = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: number }) => (
-  <div className="text-center p-4 bg-gradient-to-br from-white to-pink-50 rounded-xl border-2 border-pink-100 transform hover:scale-105 transition-all duration-300 shadow-sm">
+  <div className="text-center p-4 bg-gradient-to-br from-white to-pink-50 rounded-xl border-2 border-pink-100 shadow-sm">
     <div className="flex justify-center mb-2 text-2xl">{icon}</div>
     <div className="text-xl font-bold text-gray-800 mb-1">{value}</div>
     <div className="text-sm text-gray-600 font-medium">{label}</div>
@@ -729,9 +728,11 @@ const StatCard = ({ icon, label, value }: { icon: React.ReactNode, label: string
 
 const QuickLogButton = ({ icon, label, href }: { icon: React.ReactNode, label: string, href: string }) => (
   <Link href={href}>
-    <button className="w-full flex items-center gap-3 p-4 bg-gradient-to-r from-white to-orange-50 rounded-xl border-2 border-orange-100 hover:shadow-lg transform hover:scale-105 transition-all duration-300 group">
-      <div className="text-2xl group-hover:scale-110 transition-transform duration-300">
-        {icon}
+    <button className="flex flex-col items-center gap-2 group">
+      <div className="flex items-center justify-center w-16 h-16 rounded-full bg-orange-400 text-white shadow-lg border-4 border-white hover:bg-orange-500 transition-all duration-300 transform hover:scale-110">
+        <div className="text-2xl group-hover:scale-110 transition-transform duration-300">
+          {icon}
+        </div>
       </div>
       <span className="text-gray-700 font-medium text-sm">{label}</span>
     </button>

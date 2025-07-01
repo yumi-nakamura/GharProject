@@ -1,24 +1,21 @@
-// app/settings/page.tsx
 "use client"
 import { useEffect, useState, useCallback } from "react"
 import { createClient } from "@/utils/supabase/client"
-import { User } from "@supabase/supabase-js"
+import { useAuth } from "@/components/layout/AuthProvider"
 import { DogListItem } from "@/components/settings/DogListItem"
 import Link from 'next/link'
 import { PlusCircle } from 'lucide-react'
-import { useRouter } from "next/navigation"
+
 import { DogProfile } from "@/types/dog"
 
 export default function SettingsPage() {
+  const { user: authUser, loading: authLoading, initialized } = useAuth()
   const [dogs, setDogs] = useState<DogProfile[]>([])
   const [loading, setLoading] = useState(true)
-  const [authInitialized, setAuthInitialized] = useState(false)
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
-  const router = useRouter()
 
-  const fetchDogs = useCallback(async (user: User | null) => {
+
+  const fetchDogs = useCallback(async (user: { id: string } | null) => {
     if (!user) {
-      router.replace("/login")
       return
     }
 
@@ -59,57 +56,37 @@ export default function SettingsPage() {
     }
     setLoading(false)
     // ----------------------------------------------------------------
-  }, [router])
-
-  useEffect(() => {
-    const supabase = createClient()
-    
-    // 初期認証状態を取得
-    const initializeAuth = async () => {
-      try {
-        const { data: { user }, error } = await supabase.auth.getUser()
-        
-        if (error) {
-          console.error('初期認証状態取得エラー:', error)
-        } else {
-          console.log('初期認証状態:', user)
-          setCurrentUser(user)
-        }
-        setAuthInitialized(true)
-      } catch (error) {
-        console.error('初期認証状態取得に失敗:', error)
-        setAuthInitialized(true)
-      }
-    }
-
-    initializeAuth()
-
-    // 認証状態の変更を監視
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('認証状態変更:', event, session?.user)
-      setCurrentUser(session?.user || null)
-      
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        // 認証状態が更新されたら犬の情報を再取得
-        await fetchDogs(session?.user || null)
-      }
-    })
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [fetchDogs])
+  }, [])
 
   // 認証が初期化されたら犬の情報を取得
   useEffect(() => {
-    if (authInitialized) {
-      fetchDogs(currentUser)
+    if (initialized && !authLoading && authUser) {
+      fetchDogs(authUser)
     }
-  }, [authInitialized, currentUser, fetchDogs])
+  }, [initialized, authLoading, authUser, fetchDogs])
 
   const handleDogDelete = () => {
     // 犬が削除されたら、リストを再取得
-    fetchDogs(currentUser)
+    fetchDogs(authUser)
+  }
+
+  if (authLoading || !initialized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-orange-50">
+        <div className="text-6xl animate-bounce mb-4">🐕</div>
+        <div className="text-lg font-semibold text-orange-600">認証状態を確認中...</div>
+      </div>
+    )
+  }
+
+  if (!authUser) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-orange-50">
+        <div className="text-6xl mb-4">🔒</div>
+        <div className="text-lg font-semibold text-orange-600 mb-2">認証が必要です</div>
+        <div className="text-gray-600">ログインして設定をご利用ください</div>
+      </div>
+    )
   }
 
   if (loading) {
@@ -177,4 +154,4 @@ export default function SettingsPage() {
        */}
     </div>
   )
-}
+} 

@@ -1,33 +1,14 @@
 "use client"
 // 2. layout/FooterNav.tsx
-import { type ReactElement, useEffect, useState } from "react"
+import { type ReactElement } from "react"
 import { Home, PawPrint, Camera, Bell, Settings } from "lucide-react"
 import { useProfileStatus } from "@/components/layout/ProfileStatusProvider"
 import { useAuth } from "@/components/layout/AuthProvider"
-import { createClient } from "@/utils/supabase/client"
 import Link from "next/link"
 
 export function FooterNav() {
   const { hasDogProfile, loading } = useProfileStatus()
   const { user } = useAuth()
-  const [dogId, setDogId] = useState<string | null>(null)
-
-  useEffect(() => {
-    const fetchDogId = async () => {
-      if (user) {
-        const supabase = createClient()
-        // 犬のIDを取得
-        const { data: dogs } = await supabase.from("dogs").select("id").eq("owner_id", user.id)
-        if (dogs && dogs.length > 0) {
-          setDogId(dogs[0].id)
-        }
-      } else {
-        setDogId(null)
-      }
-    }
-
-    fetchDogId()
-  }, [user])
 
   // 認証されていない場合は何も表示しない
   if (!user) {
@@ -43,7 +24,7 @@ export function FooterNav() {
   return (
     <nav className="fixed bottom-0 w-full bg-white border-t flex justify-around items-end py-2 z-40">
       <NavIcon icon={<Home />} href="/" disabled={disabled} tooltip={tooltip} />
-      <NavIcon icon={<PawPrint />} href={dogId ? `/dog/${dogId}/timeline` : "/dog/register"} disabled={disabled} tooltip={tooltip} />
+      <NavIcon icon={<PawPrint />} href="/timeline" disabled={disabled} tooltip={tooltip} />
       <NavIcon icon={<Camera />} href="/otayori/new" highlight disabled={disabled} tooltip={tooltip} />
       <NavIcon icon={<Bell />} href="/notifications" disabled={disabled} tooltip={tooltip} />
       <NavIcon icon={<Settings />} href="/settings" disabled={disabled} tooltip={tooltip} />
