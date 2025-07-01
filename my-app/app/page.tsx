@@ -688,6 +688,14 @@ function Dashboard({ communityPosts }: { communityPosts: CommunityPost[] }) {
             )}
 
             {/* アクションリンク */}
+            <div className="mb-4">
+              <ActionLink 
+                icon={<Activity />} 
+                label="健康レポート" 
+                href="/health-report" 
+                gradient="from-green-500 to-teal-500" 
+              />
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <ActionLink 
                 icon={<Dog />} 
