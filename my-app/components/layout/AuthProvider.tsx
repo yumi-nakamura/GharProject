@@ -30,7 +30,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         if (sessionError) {
           console.error('セッション取得エラー:', sessionError)
-          // セッションエラーは無視して続行（未ログイン状態として扱う）
+          // セッションエラーが発生した場合、ローカルストレージをクリア
+          if (sessionError.message.includes('Refresh Token')) {
+            console.log('リフレッシュトークンエラーを検出、ローカルストレージをクリア')
+            localStorage.removeItem('sb-access-token')
+            localStorage.removeItem('sb-refresh-token')
+          }
         }
         
         // ユーザー情報を取得
@@ -59,6 +64,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 認証状態の変更を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('認証状態変更:', event, session?.user ? 'ログイン済み' : '未ログイン')
+      
+      // エラーイベントの場合はローカルストレージをクリア
+      if (event === 'TOKEN_REFRESHED' && !session) {
+        console.log('トークンリフレッシュエラー、ローカルストレージをクリア')
+        localStorage.removeItem('sb-access-token')
+        localStorage.removeItem('sb-refresh-token')
+      }
+      
       setUser(session?.user || null)
       
       // 初回の初期化が完了していない場合は、ここで完了させる

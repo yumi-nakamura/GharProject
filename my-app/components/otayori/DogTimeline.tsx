@@ -27,6 +27,7 @@ export function DogTimeline({ dogs }: { dogs: DogProfile[] }) {
   const [posts, setPosts] = useState<OtayoriRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [analyzedOtayoriIds, setAnalyzedOtayoriIds] = useState<Set<string>>(new Set())
   const router = useRouter()
 
   useEffect(() => {
@@ -71,7 +72,7 @@ export function DogTimeline({ dogs }: { dogs: DogProfile[] }) {
           type: String(item.type) as 'meal' | 'poop' | 'emotion',
           content: String(item.content),
           datetime: String(item.datetime),
-          photoUrl: String(item.photo_url),
+          photo_url: String(item.photo_url),
           mood: item.mood ? String(item.mood) : undefined,
           tags: Array.isArray(item.tags) ? item.tags as string[] : undefined,
           customDatetime: item.custom_datetime ? String(item.custom_datetime) : undefined,
@@ -82,6 +83,10 @@ export function DogTimeline({ dogs }: { dogs: DogProfile[] }) {
         console.log('DogTimeline: 処理済みデータ', { posts, count: posts.length })
         
         setPosts(posts)
+        
+        // 分析済みのotayori_idを取得
+        await fetchAnalyzedOtayoriIds(posts.map(p => p.id))
+        
         setLoading(false)
       } catch (err) {
         console.error('予期しないエラー:', err)
@@ -92,6 +97,30 @@ export function DogTimeline({ dogs }: { dogs: DogProfile[] }) {
 
     fetchPosts()
   }, [dogs, router])
+
+  // 分析済みのotayori_idを取得する関数
+  const fetchAnalyzedOtayoriIds = async (otayoriIds: string[]) => {
+    try {
+      if (otayoriIds.length === 0) return
+      
+      const { data: analyzedData, error } = await supabase
+        .from('ai_analysis')
+        .select('otayori_id')
+        .in('otayori_id', otayoriIds)
+        .not('otayori_id', 'is', null)
+      
+      if (error) {
+        console.error('分析済み投稿ID取得エラー:', error)
+        return
+      }
+      
+      const analyzedIds = new Set(analyzedData?.map(a => a.otayori_id).filter((id): id is string => id !== null) || [])
+      console.log('分析済み投稿ID:', Array.from(analyzedIds))
+      setAnalyzedOtayoriIds(analyzedIds)
+    } catch (error) {
+      console.error('分析済み投稿ID取得エラー:', error)
+    }
+  }
 
   const grouped = groupByDate(posts)
   const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
@@ -143,8 +172,15 @@ export function DogTimeline({ dogs }: { dogs: DogProfile[] }) {
             {grouped[date].map(post => {
               // 投稿に対応する犬の情報を取得
               const dog = dogs.find(d => d.id === post.dogId)
+              // 分析済みかどうかを判定
+              const isAnalyzed = analyzedOtayoriIds.has(post.id)
               return (
-                <OtayoriCard key={post.id} post={post} dog={dog || null} />
+                <OtayoriCard 
+                  key={post.id} 
+                  post={post} 
+                  dog={dog || null} 
+                  isAnalyzed={isAnalyzed}
+                />
               )
             })}
           </div>

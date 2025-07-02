@@ -9,6 +9,7 @@ import LikeButton from '@/components/community/LikeButton'
 import { Utensils, Heart, Search, Filter, X, PawPrint } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/layout/AuthProvider'
+import Image from 'next/image'
 
 interface CommunityPost extends OtayoriRecord {
   dog: DogProfile;
@@ -95,21 +96,12 @@ export default function CommunityPage() {
         const userProfile = usersData?.find(u => u.user_id === post.user_id)
         const likes_count = likesCountMap.get(post.id) || 0
         return {
-          id: post.id,
-          dogId: post.dog_id,
-          userId: post.user_id,
-          type: post.type,
-          content: post.content,
-          datetime: post.datetime,
-          photoUrl: post.photo_url,
-          mood: post.mood,
-          tags: post.tags,
-          customDatetime: post.custom_datetime,
-          poopGuardPassword: post.poop_guard_password,
-          isPoopGuarded: post.is_poop_guarded,
+          ...post,
           dog,
           user: userProfile,
-          likes_count
+          likes_count,
+          photo_url: post.photo_url ?? post.photoUrl ?? "",
+          userId: post.user_id // userIdプロパティを明示的に設定
         }
       })
       setPosts(combinedPosts)
@@ -529,28 +521,47 @@ export default function CommunityPage() {
         {/* 投稿一覧 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {pagedPosts.map((post) => {
-            const isOwnPost = user && post.userId === user.id
+            const isOwnPost = user && String(user.id) === String(post.userId);
+            // photo_urlが有効なURLか判定
+            const isValidImageUrl = typeof post.photo_url === 'string' && (post.photo_url.startsWith('/') || post.photo_url.startsWith('http://') || post.photo_url.startsWith('https://'));
             return (
               <div
                 key={post.id}
-                className={`bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border ${
+                className={`bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border relative ${
                   isOwnPost 
-                    ? 'border-blue-200 shadow-blue-100' 
+                    ? 'border-blue-400 shadow-blue-200 ring-2 ring-blue-200' 
                     : 'border-gray-100'
                 }`}
               >
                 {/* 画像 */}
-                {post.photoUrl && (
+                {isValidImageUrl ? (
                   <div className="relative h-48 overflow-hidden">
-                    <img
-                      src={post.photoUrl}
+                    <Image
+                      src={post.photo_url}
                       alt="投稿画像"
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
                     <div className="absolute top-3 left-3">
                       {getTypeIcon(post.type)}
                     </div>
+                    {/* うちのコバッジ（画像右上に重ねて表示） */}
+                    {isOwnPost && (
+                      <div className="absolute top-2 right-2 z-20 flex items-center gap-1 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold shadow border border-blue-200">
+                        <span className="text-lg">🐾</span>
+                        うちのコ
+                      </div>
+                    )}
                   </div>
+                ) : (
+                  // 画像がない場合はカード右上にバッジ
+                  isOwnPost && (
+                    <div className="absolute top-2 right-2 z-20 flex items-center gap-1 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold shadow border border-blue-200">
+                      <span className="text-lg">🐾</span>
+                      うちのコ
+                    </div>
+                  )
                 )}
 
                 {/* コンテンツ */}
@@ -572,11 +583,6 @@ export default function CommunityPage() {
                       <span className="text-xs text-gray-400">
                         {new Date(post.datetime).toLocaleDateString('ja-JP')}
                       </span>
-                      {user && post.userId === user.id && (
-                        <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
-                          うちのコ
-                        </span>
-                      )}
                     </div>
                   </div>
 

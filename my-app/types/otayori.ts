@@ -7,7 +7,7 @@ export interface OtayoriRecord {
   type: OtayoriType
   content: string
   datetime: string
-  photoUrl: string
+  photo_url: string
   mood?: string
   tags?: string[]
   poopGuardPassword?: string
@@ -36,4 +36,6 @@ export const TAG_OPTIONS = {
     '元気', '嬉しい', '楽しい', 'リラックス', '興奮', '不安',
     '寂しい', '怒っている', '悲しい', '満足', '疲れている'
   ]
-} as const 
+} as const
+
+export type OtayoriPost = OtayoriRecord; 

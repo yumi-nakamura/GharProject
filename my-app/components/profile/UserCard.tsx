@@ -1,8 +1,10 @@
 // profile/UserCard.tsx
 import type { UserProfile } from "@/types/user"
-import { User, Heart, Calendar } from "lucide-react"
+import { User, Heart, Calendar, Edit } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export function UserCard({ user }: { user: UserProfile }) {
+  const router = useRouter()
   const hasAvatar = user.avatar_url && user.avatar_url.trim() !== ""
   const isBase64 = hasAvatar && user.avatar_url!.startsWith('data:image')
   
@@ -55,6 +57,17 @@ export function UserCard({ user }: { user: UserProfile }) {
           <div className="bg-gradient-to-r from-orange-400 to-pink-400 text-white p-2 rounded-full">
             <Heart size={16} />
           </div>
+        </div>
+
+        {/* 編集ボタン */}
+        <div className="mt-4">
+          <button
+            onClick={() => router.push("/profile/edit")}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all duration-200 shadow-sm hover:shadow-md"
+          >
+            <Edit size={16} />
+            プロフィール編集
+          </button>
         </div>
       </div>
     </div>

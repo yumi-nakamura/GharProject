@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/client"
 import { useAuth } from "@/components/layout/AuthProvider"
 import Link from "next/link"
 import { PawPrint, User } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 const supabase = createClient()
 
@@ -13,6 +14,7 @@ export function Navbar() {
   const [email, setEmail] = useState<string | null>(null)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const router = useRouter();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -54,7 +56,7 @@ export function Navbar() {
   const handleSignOut = async () => {
     try {
       await signOut()
-      window.location.reload()
+      router.push('/')
     } catch (error) {
       console.error('サインアウトエラー:', error)
     }

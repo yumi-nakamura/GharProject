@@ -13,13 +13,21 @@ import {
   Target,
   Award,
   Eye,
+  EyeOff,
   Brain,
   Bone,
   Bubbles,
   BarChart3,
-  AlertTriangle
+  AlertTriangle,
+  Info,
+  Star,
+  Smile,
+  Utensils,
+  Leaf
 } from "lucide-react"
 import Link from "next/link"
+import AIAnalysisCard from "@/components/otayori/AIAnalysisCard"
+import type { DogImageAnalysisWithOtayori } from '@/types/ai-analysis'
 
 const supabase = createClient()
 
@@ -42,10 +50,13 @@ interface OtayoriPost {
   type: string
   datetime: string
   content?: string
-  image_url?: string
+  photo_url?: string
   tags?: string[]
   [key: string]: unknown
 }
+
+// nullをundefinedに変換するユーティリティ
+const nullToUndefined = (v: string | null | undefined): string | undefined => v == null ? undefined : v;
 
 export default function HealthReportPage() {
   const { user, loading: authLoading, initialized } = useAuth()
@@ -54,6 +65,184 @@ export default function HealthReportPage() {
   const [healthData, setHealthData] = useState<HealthData | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter'>('week')
+  const [showAIAnalysis, setShowAIAnalysis] = useState(false)
+  const [showImageSelector, setShowImageSelector] = useState(false)
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string>('')
+  const [selectedAnalysisType, setSelectedAnalysisType] = useState<'poop' | 'meal' | 'emotion'>('meal')
+  const [recentPosts, setRecentPosts] = useState<OtayoriPost[]>([])
+  const [analysisHistory, setAnalysisHistory] = useState<DogImageAnalysisWithOtayori[]>([])
+  const [hiddenPoopImages, setHiddenPoopImages] = useState<Set<string>>(new Set())
+  const [selectedOtayoriId, setSelectedOtayoriId] = useState<string | undefined>(undefined)
+  const [deletedAnalysisOtayoriIds, setDeletedAnalysisOtayoriIds] = useState<Set<string>>(new Set())
+
+  const fetchRecentPosts = useCallback(async (dogId: string) => {
+    try {
+      // 分析済みのotayori_idを取得
+      const { data: analyzedOtayori, error: analysisError } = await supabase
+        .from('ai_analysis')
+        .select('otayori_id')
+        .not('otayori_id', 'is', null)
+      
+      if (analysisError) {
+        console.error('分析済み投稿ID取得エラー:', analysisError)
+        return
+      }
+      
+      const analyzedIds = analyzedOtayori?.map(a => a.otayori_id).filter((id): id is string => id !== null) || []
+      console.log('分析済み投稿ID:', analyzedIds)
+      
+      // 削除された分析結果のotayori_idを除外（再度分析可能にする）
+      const activeAnalyzedIds = analyzedIds.filter(id => !deletedAnalysisOtayoriIds.has(id))
+      console.log('削除された分析結果を除外後の投稿ID:', activeAnalyzedIds)
+      
+      // 分析済みでない投稿のみを取得
+      let query = supabase
+        .from('otayori')
+        .select('*')
+        .eq('dog_id', dogId)
+        .not('photo_url', 'is', null)
+        .order('datetime', { ascending: false })
+        .limit(20)
+      
+      if (activeAnalyzedIds.length > 0) {
+        query = query.not('id', 'in', `(${activeAnalyzedIds.join(',')})`)
+      }
+      
+      const { data: posts, error } = await query
+
+      if (error) {
+        console.error('最近の投稿取得エラー:', error)
+        return
+      }
+
+      setRecentPosts(posts || [])
+    } catch (error) {
+      console.error('最近の投稿取得エラー:', error)
+    }
+  }, [deletedAnalysisOtayoriIds])
+
+  const fetchAnalysisHistory = useCallback(async (dogId: string) => {
+    try {
+      console.log('分析履歴取得開始:', { dogId, userId: user?.id })
+      
+      // まず、この犬に関連するotayori投稿のIDを取得
+      const { data: otayoriPosts, error: otayoriError } = await supabase
+        .from('otayori')
+        .select('id')
+        .eq('dog_id', dogId)
+      
+      if (otayoriError) {
+        console.error('otayori投稿取得エラー:', otayoriError)
+        return
+      }
+      
+      const otayoriIds = otayoriPosts?.map(post => post.id) || []
+      console.log('otayori投稿ID:', otayoriIds)
+      
+      if (otayoriIds.length === 0) {
+        console.log('otayori投稿が見つかりません')
+        setAnalysisHistory([])
+        return
+      }
+      
+      console.log('otayori投稿が見つかりました:', otayoriIds.length, '件')
+      
+      // AI分析履歴を取得（otayori_idでフィルタリング）
+      console.log('AI分析履歴クエリ実行:', {
+        otayoriIds: otayoriIds,
+        query: `SELECT * FROM ai_analysis WHERE otayori_id IN (${otayoriIds.join(',')}) ORDER BY created_at DESC LIMIT 10`
+      });
+      
+      const { data: history, error } = await supabase
+        .from('ai_analysis')
+        .select(`
+          *,
+          otayori:otayori_id (
+            id,
+            type,
+            datetime,
+            content,
+            photo_url
+          )
+        `)
+        .in('otayori_id', otayoriIds)
+        .order('created_at', { ascending: false })
+        .limit(10)
+
+      if (error) {
+        console.error('分析履歴取得エラー:', error)
+        setAnalysisHistory([])
+        return
+      }
+
+      console.log('取得した分析履歴:', history)
+      console.log('分析履歴の長さ:', history?.length || 0)
+      console.log('各分析のotayori情報:', history?.map(h => ({
+        id: h.id,
+        otayori_id: h.otayori_id,
+        otayori: h.otayori
+      })))
+      setAnalysisHistory(history || [])
+    } catch (error) {
+      console.error('分析履歴取得エラー:', error)
+    }
+  }, [user?.id])
+
+  // 分析履歴を即座に更新する関数
+  const refreshAnalysisHistory = useCallback(async () => {
+    console.log('分析履歴更新開始:', { selectedDog: selectedDog?.id })
+    if (selectedDog) {
+      await fetchAnalysisHistory(selectedDog.id)
+    }
+  }, [selectedDog, fetchAnalysisHistory])
+
+  // 分析結果を削除する関数
+  const deleteAnalysis = useCallback(async (analysisId: string) => {
+    try {
+      // 削除前にotayori_idを取得
+      const { data: analysisData, error: fetchError } = await supabase
+        .from('ai_analysis')
+        .select('otayori_id')
+        .eq('id', analysisId)
+        .single()
+      
+      if (fetchError) {
+        console.error('分析結果取得エラー:', fetchError)
+        return
+      }
+      
+      const otayoriId = analysisData?.otayori_id
+      
+      // 分析結果を削除
+      const { error } = await supabase
+        .from('ai_analysis')
+        .delete()
+        .eq('id', analysisId)
+      
+      if (error) {
+        console.error('分析結果削除エラー:', error)
+        return
+      }
+      
+      // 削除されたotayori_idを記録
+      if (otayoriId) {
+        setDeletedAnalysisOtayoriIds(prev => new Set([...prev, otayoriId]))
+        console.log('削除されたotayori_idを記録:', otayoriId)
+      }
+      
+      // 履歴を更新
+      await refreshAnalysisHistory()
+      
+      // 最近の投稿を再取得（削除された画像が再度表示される）
+      if (selectedDog) {
+        await fetchRecentPosts(selectedDog.id)
+      }
+      
+      console.log('分析結果を削除しました:', analysisId)
+    } catch (error) {
+      console.error('分析結果削除エラー:', error)
+    }
+  }, [refreshAnalysisHistory, selectedDog, fetchRecentPosts])
 
   const analyzeHealthData = useCallback((posts: OtayoriPost[], period: string): HealthData => {
     const mealPosts = posts.filter(post => post.type === 'meal')
@@ -120,19 +309,7 @@ export default function HealthReportPage() {
     }
   }, [analyzeHealthData])
 
-  useEffect(() => {
-    if (initialized && !authLoading && user) {
-      fetchDogs()
-    }
-  }, [initialized, authLoading, user])
-
-  useEffect(() => {
-    if (selectedDog) {
-      fetchHealthData(selectedDog.id, selectedPeriod)
-    }
-  }, [selectedDog, selectedPeriod, fetchHealthData])
-
-  const fetchDogs = async () => {
+  const fetchDogs = useCallback(async () => {
     try {
       if (!user) {
         return
@@ -160,6 +337,7 @@ export default function HealthReportPage() {
         setDogs(data || [])
         if (data && data.length > 0) {
           setSelectedDog(data[0])
+          fetchRecentPosts(data[0].id)
         }
       }
     } catch (error) {
@@ -167,16 +345,30 @@ export default function HealthReportPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user, fetchRecentPosts])
+
+  useEffect(() => {
+    if (initialized && !authLoading && user) {
+      fetchDogs()
+    }
+  }, [initialized, authLoading, user, fetchDogs])
+
+  useEffect(() => {
+    if (selectedDog) {
+      fetchHealthData(selectedDog.id, selectedPeriod)
+      fetchRecentPosts(selectedDog.id)
+      fetchAnalysisHistory(selectedDog.id)
+    }
+  }, [selectedDog, selectedPeriod, fetchHealthData, fetchRecentPosts, fetchAnalysisHistory])
 
   const generateRecommendations = (mealPosts: OtayoriPost[], poopPosts: OtayoriPost[], emotionPosts: OtayoriPost[], avgMeals: number, avgPoops: number): string[] => {
     const recommendations = []
 
     if (avgMeals < 1) {
-      recommendations.push("食事記録を増やして、栄養管理を改善しましょう")
+      recommendations.push("ごはん記録を増やして、栄養管理を改善しましょう")
     }
     if (avgPoops < 1) {
-      recommendations.push("排泄記録を増やして、健康状態を把握しましょう")
+      recommendations.push("うんち記録を増やして、健康状態を把握しましょう")
     }
     if (emotionPosts.length === 0) {
       recommendations.push("感情記録を追加して、精神状態を把握しましょう")
@@ -192,10 +384,10 @@ export default function HealthReportPage() {
     const alerts = []
 
     if (avgMeals > 5) {
-      alerts.push("食事回数が多すぎる可能性があります")
+      alerts.push("ごはん回数が多すぎる可能性があります")
     }
     if (avgPoops > 6) {
-      alerts.push("排泄回数が多すぎる可能性があります")
+      alerts.push("うんち回数が多すぎる可能性があります")
     }
 
     return alerts
@@ -225,6 +417,13 @@ export default function HealthReportPage() {
       return "安定"
     }
   }
+
+  const getScoreBarColor = (type: string) => {
+    if (type === 'meal') return 'bg-orange-400';
+    if (type === 'poop') return 'bg-green-400';
+    if (type === 'emotion') return 'bg-pink-400';
+    return 'bg-blue-400';
+  };
 
   if (authLoading || !initialized) {
     return (
@@ -388,7 +587,7 @@ export default function HealthReportPage() {
               <div className="bg-white rounded-xl p-6 shadow-sm border border-orange-100">
                 <div className="flex items-center gap-3 mb-3">
                   <Bone className="text-orange-500" size={20} />
-                  <h4 className="font-semibold text-gray-800">食事記録</h4>
+                  <h4 className="font-semibold text-gray-800">ごはん記録</h4>
                 </div>
                 <div className="text-2xl font-bold text-orange-600 mb-1">{healthData.mealCount}</div>
                 <div className="text-sm text-gray-500">
@@ -399,7 +598,7 @@ export default function HealthReportPage() {
               <div className="bg-white rounded-xl p-6 shadow-sm border border-green-100">
                 <div className="flex items-center gap-3 mb-3">
                   <Bubbles className="text-green-500" size={20} />
-                  <h4 className="font-semibold text-gray-800">排泄記録</h4>
+                  <h4 className="font-semibold text-gray-800">うんち記録</h4>
                 </div>
                 <div className="text-2xl font-bold text-green-600 mb-1">{healthData.poopCount}</div>
                 <div className="text-sm text-gray-500">
@@ -432,11 +631,45 @@ export default function HealthReportPage() {
 
             {/* AIアドバイス */}
             <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-6 shadow-sm border border-blue-200 mb-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                  <Brain className="text-white" size={20} />
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                    <Brain className="text-white" size={20} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-blue-800">AI健康アドバイス</h3>
                 </div>
-                <h3 className="text-lg font-semibold text-blue-800">AI健康アドバイス</h3>
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={() => {
+                      setSelectedAnalysisType('meal')
+                      setShowImageSelector(true)
+                    }}
+                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                  >
+                    <Brain size={16} />
+                    ごはん分析
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedAnalysisType('poop')
+                      setShowImageSelector(true)
+                    }}
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                  >
+                    <Brain size={16} />
+                    うんち分析
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedAnalysisType('emotion')
+                      setShowImageSelector(true)
+                    }}
+                    className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                  >
+                    <Brain size={16} />
+                    きもち分析
+                  </button>
+                </div>
               </div>
               
               {healthData.recommendations.length > 0 && (
@@ -474,6 +707,316 @@ export default function HealthReportPage() {
               )}
             </div>
 
+            {/* AI分析履歴 */}
+            {(() => {
+              console.log('AI分析履歴表示条件チェック:', {
+                analysisHistoryLength: analysisHistory.length,
+                analysisHistory: analysisHistory
+              });
+              return analysisHistory.length > 0;
+            })() && (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 shadow-sm border border-blue-200 mb-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                    <Brain className="text-white" size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-blue-800">AI分析履歴</h3>
+                    <p className="text-sm text-blue-600">わんちゃんの健康管理の記録です 🐕</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {analysisHistory.slice(0, 6).map((analysis) => {
+                    const imageUrl = String((nullToUndefined(analysis.image_url) ?? nullToUndefined(analysis.otayori?.photo_url as string | null | undefined)) || '');
+                    return (
+                      <div key={analysis.id} className="bg-white rounded-xl p-5 border border-blue-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex flex-col md:flex-row gap-4 items-start">
+                          {/* 画像＋詳細情報 横並び */}
+                          <div className="relative flex-shrink-0">
+                            {/* うんち画像はデフォルトで隠す */}
+                            {analysis.analysis_type === 'poop' && hiddenPoopImages.has(analysis.id) ? (
+                              <div className="w-28 h-28 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center relative">
+                                <Eye className="text-green-400 w-10 h-10 mb-2" />
+                                <button
+                                  onClick={() => {
+                                    const newHidden = new Set(hiddenPoopImages)
+                                    newHidden.delete(analysis.id)
+                                    setHiddenPoopImages(newHidden)
+                                  }}
+                                  className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold shadow hover:bg-green-200 transition absolute bottom-3 left-1/2 -translate-x-1/2"
+                                >
+                                  画像を表示
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="relative">
+                                {imageUrl && (
+                                  <img
+                                    src={imageUrl}
+                                    alt={`${analysis.analysis_type} analysis image`}
+                                    className="w-28 h-28 object-cover rounded-lg border"
+                                    style={{ background: "#eee", display: "block" }}
+                                    onError={e => {
+                                      e.currentTarget.src = "/no-image.png";
+                                      e.currentTarget.style.background = "#fcc";
+                                    }}
+                                  />
+                                )}
+                                {analysis.analysis_type === 'poop' && (
+                                  <button
+                                    onClick={() => {
+                                      const newHidden = new Set(hiddenPoopImages)
+                                      newHidden.add(analysis.id)
+                                      setHiddenPoopImages(newHidden)
+                                    }}
+                                    className="absolute inset-0 flex flex-col items-center justify-center bg-white/70 rounded-lg"
+                                    style={{ zIndex: 2 }}
+                                  >
+                                    <EyeOff className="text-green-400 w-10 h-10 mb-2" />
+                                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold shadow hover:bg-green-200 transition">画像を隠す</span>
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          {/* 詳細情報 */}
+                          <div className="flex-1 min-w-0">
+                            {/* 健康スコアの視覚的表示 */}
+                            <div className="mb-2">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Star className="text-yellow-400 w-4 h-4" />
+                                <span className="text-xs font-medium text-gray-600">健康スコア</span>
+                                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                  <div
+                                    className={`h-2 rounded-full transition-all duration-300 ${getScoreBarColor(analysis.analysis_type)}`}
+                                    style={{ width: `${analysis.health_score * 10}%` }}
+                                  ></div>
+                                </div>
+                                <span className="ml-2 text-sm font-bold text-gray-700">{analysis.health_score}/10</span>
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {analysis.health_score >= 8 ? '🌟 優秀' : analysis.health_score >= 6 ? '👍 良好' : '⚠️ 要改善'}
+                              </div>
+                            </div>
+                            {/* 詳細情報 */}
+                            {analysis.details && (
+                              <div className="mb-2">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Info className="text-blue-400 w-4 h-4" />
+                                  <span className="text-sm font-medium text-gray-700">詳細情報</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                  {analysis.details.color && (
+                                    <div className="flex items-center gap-1">
+                                      <Leaf className="text-green-400 w-3 h-3" />
+                                      <span className="text-gray-500">色:</span>
+                                      <span className="text-gray-700">{analysis.details.color}</span>
+                                    </div>
+                                  )}
+                                  {analysis.details.consistency && (
+                                    <div className="flex items-center gap-1">
+                                      <Utensils className="text-orange-400 w-3 h-3" />
+                                      <span className="text-gray-500">状態:</span>
+                                      <span className="text-gray-700">{analysis.details.consistency}</span>
+                                    </div>
+                                  )}
+                                  {analysis.details.amount && (
+                                    <div className="flex items-center gap-1">
+                                      <Star className="text-yellow-400 w-3 h-3" />
+                                      <span className="text-gray-500">量:</span>
+                                      <span className="text-gray-700">{analysis.details.amount}</span>
+                                    </div>
+                                  )}
+                                  {analysis.details.appetite && (
+                                    <div className="flex items-center gap-1">
+                                      <Utensils className="text-orange-400 w-3 h-3" />
+                                      <span className="text-gray-500">食欲:</span>
+                                      <span className="text-gray-700">{analysis.details.appetite}</span>
+                                    </div>
+                                  )}
+                                  {analysis.details.mood && (
+                                    <div className="flex items-center gap-1">
+                                      <Smile className="text-pink-400 w-3 h-3" />
+                                      <span className="text-gray-500">機嫌:</span>
+                                      <span className="text-gray-700">{analysis.details.mood}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 観察結果 */}
+                        {analysis.observations && analysis.observations.length > 0 && (
+                          <div className="mb-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-green-500">🔍</span>
+                              <span className="text-sm font-medium text-gray-700">観察結果</span>
+                            </div>
+                            <div className="space-y-1">
+                              {analysis.observations.slice(0, 2).map((observation: string, index: number) => (
+                                <div key={index} className="text-sm text-gray-600 flex items-start gap-2">
+                                  <span className="text-green-400 mt-1">•</span>
+                                  <span>{observation}</span>
+                                </div>
+                              ))}
+                              {analysis.observations.length > 2 && (
+                                <div className="text-xs text-gray-400 italic">
+                                  他 {analysis.observations.length - 2} 件の観察結果があります
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 推奨事項 */}
+                        {analysis.recommendations && analysis.recommendations.length > 0 && (
+                          <div className="mb-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-blue-500">💡</span>
+                              <span className="text-sm font-medium text-gray-700">推奨事項</span>
+                            </div>
+                            <div className="space-y-1">
+                              {analysis.recommendations.slice(0, 2).map((recommendation: string, index: number) => (
+                                <div key={index} className="text-sm text-blue-600 flex items-start gap-2">
+                                  <span className="text-blue-400 mt-1">•</span>
+                                  <span>{recommendation}</span>
+                                </div>
+                              ))}
+                              {analysis.recommendations.length > 2 && (
+                                <div className="text-xs text-blue-400 italic">
+                                  他 {analysis.recommendations.length - 2} 件の推奨があります
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 注意事項 */}
+                        {analysis.warnings && analysis.warnings.length > 0 && (
+                          <div className="mb-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-orange-500">⚠️</span>
+                              <span className="text-sm font-medium text-gray-700">注意事項</span>
+                            </div>
+                            <div className="space-y-1">
+                              {analysis.warnings.slice(0, 2).map((warning: string, index: number) => (
+                                <div key={index} className="text-sm text-orange-600 flex items-start gap-2">
+                                  <span className="text-orange-400 mt-1">•</span>
+                                  <span>{warning}</span>
+                                </div>
+                              ))}
+                              {analysis.warnings.length > 2 && (
+                                <div className="text-xs text-orange-400 italic">
+                                  他 {analysis.warnings.length - 2} 件の注意事項があります
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 励ましの言葉 */}
+                        {analysis.encouragement && (
+                          <div className="border-t pt-3">
+                            <div className="flex items-start gap-2">
+                              <span className="text-pink-400 text-lg">💝</span>
+                              <div className="flex-1">
+                                <div className="text-xs font-medium text-pink-600 mb-1">メッセージ</div>
+                                <div className="text-sm text-pink-700 leading-relaxed">
+                                  {analysis.encouragement}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 記録日と分析日 */}
+                        <div className="border-t pt-3 mb-3">
+                          <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                            <div className="flex items-center gap-1">
+                              <span className="text-pink-400">📝</span>
+                              <span>記録日: {analysis.otayori?.datetime ? new Date(analysis.otayori.datetime).toLocaleDateString('ja-JP', { 
+                                year: 'numeric', 
+                                month: 'short', 
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              }) : '不明'}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="text-blue-400">🤖</span>
+                              <span>分析日: {new Date(analysis.created_at).toLocaleDateString('ja-JP', { 
+                                year: 'numeric', 
+                                month: 'short', 
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 削除ボタン */}
+                        <div className="flex justify-end">
+                          <button
+                            onClick={() => deleteAnalysis(analysis.id)}
+                            className="flex items-center gap-1 px-3 py-1 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+                            title="この分析結果を削除"
+                          >
+                            <span>🗑️</span>
+                            <span>削除</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* 履歴の統計情報 */}
+                <div className="mt-4 pt-4 border-t border-blue-200">
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <div className="text-lg font-bold text-blue-600">{analysisHistory.length}</div>
+                      <div className="text-xs text-gray-500">総分析回数</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-green-600">
+                        {Math.round(analysisHistory.reduce((sum, a) => sum + a.health_score, 0) / analysisHistory.length)}
+                      </div>
+                      <div className="text-xs text-gray-500">平均スコア</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-purple-600">
+                        {analysisHistory.filter(a => a.health_score >= 8).length}
+                      </div>
+                      <div className="text-xs text-gray-500">優秀回数</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* AI分析履歴が空の場合 */}
+            {analysisHistory.length === 0 && (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 shadow-sm border border-blue-200 mb-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                    <Brain className="text-white" size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-blue-800">AI分析履歴</h3>
+                    <p className="text-sm text-blue-600">わんちゃんの健康管理の記録です 🐕</p>
+                  </div>
+                </div>
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-4">🤖</div>
+                  <p className="text-gray-600 mb-4">まだAI分析の履歴がありません</p>
+                  <p className="text-sm text-gray-500">上記の分析ボタンから分析を開始してください</p>
+                </div>
+              </div>
+            )}
+
             {/* 今後の機能予告 */}
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 shadow-sm border border-purple-200">
               <div className="flex items-center gap-3 mb-4">
@@ -484,11 +1027,6 @@ export default function HealthReportPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center p-4 bg-white rounded-lg">
-                  <div className="text-2xl mb-2">🤖</div>
-                  <h4 className="font-semibold text-purple-700 mb-2">AI画像分析</h4>
-                  <p className="text-sm text-gray-600">写真から健康状態を自動分析</p>
-                </div>
-                <div className="text-center p-4 bg-white rounded-lg">
                   <div className="text-2xl mb-2">🏥</div>
                   <h4 className="font-semibold text-purple-700 mb-2">獣医師連携</h4>
                   <p className="text-sm text-gray-600">専門医による詳細アドバイス</p>
@@ -498,11 +1036,117 @@ export default function HealthReportPage() {
                   <h4 className="font-semibold text-purple-700 mb-2">詳細レポート</h4>
                   <p className="text-sm text-gray-600">より詳細な健康分析レポート</p>
                 </div>
+                <div className="text-center p-4 bg-white rounded-lg">
+                  <div className="text-2xl mb-2">🔔</div>
+                  <h4 className="font-semibold text-purple-700 mb-2">緊急アラート</h4>
+                  <p className="text-sm text-gray-600">異常値検出時の通知機能</p>
+                </div>
               </div>
             </div>
           </>
         )}
       </div>
+
+      {/* 画像選択モーダル */}
+      {showImageSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800">
+                {selectedAnalysisType === 'meal' ? 'ごはん' : selectedAnalysisType === 'poop' ? 'うんち' : 'きもち'}画像を選択
+              </h3>
+              <button
+                onClick={() => setShowImageSelector(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {recentPosts.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-4xl mb-4">📷</div>
+                <p className="text-gray-600 mb-4">画像付きの投稿がありません</p>
+                <p className="text-sm text-gray-500">まずは投稿に画像を追加してください</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {recentPosts
+                  .filter(post => post.type === selectedAnalysisType)
+                  .map((post) => (
+                    <div
+                      key={post.id}
+                      onClick={() => {
+                        setSelectedImageUrl(String(nullToUndefined(post.photo_url as string | null | undefined) || ''));
+                        setSelectedOtayoriId(post.id ?? undefined);
+                        setShowImageSelector(false);
+                        setShowAIAnalysis(true);
+                      }}
+                      className="cursor-pointer group"
+                    >
+                      <img
+                        src={post.photo_url}
+                        alt={`${post.type} image`}
+                        className="w-24 h-24 object-cover rounded border"
+                        style={{ background: "#eee", display: "block" }}
+                        onError={e => {
+                          e.currentTarget.src = "/no-image.png";
+                          e.currentTarget.style.background = "#fcc";
+                        }}
+                      />
+                      <p className="text-xs text-gray-600 mt-2 text-center">
+                        {new Date(post.datetime).toLocaleDateString('ja-JP')}
+                      </p>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* AI分析モーダル */}
+      {showAIAnalysis && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800">AI健康分析</h3>
+              <button
+                onClick={() => setShowAIAnalysis(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            <AIAnalysisCard
+              imageUrl={selectedImageUrl}
+              analysisType={selectedAnalysisType}
+              otayoriId={selectedOtayoriId}
+              onAnalysisComplete={async (analysis) => {
+                // 分析完了時に履歴を更新
+                console.log('分析完了:', analysis)
+                
+                // 削除された分析結果リストから該当するotayori_idを削除
+                if (selectedOtayoriId) {
+                  setDeletedAnalysisOtayoriIds(prev => {
+                    const newSet = new Set(prev)
+                    newSet.delete(selectedOtayoriId)
+                    return newSet
+                  })
+                  console.log('分析完了によりotayori_idを削除リストから除外:', selectedOtayoriId)
+                }
+                
+                await refreshAnalysisHistory()
+                
+                // 最近の投稿を再取得（新しく分析された画像が除外される）
+                if (selectedDog) {
+                  await fetchRecentPosts(selectedDog.id)
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 } 

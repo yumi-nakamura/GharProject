@@ -125,14 +125,6 @@ export default function PoopImageGuard({
         </button>
       </div>
       
-      <div className="mt-4 p-2 bg-yellow-100 rounded-lg">
-        <p className="text-xs text-yellow-700">
-          💡 <strong>ヒント:</strong> 西暦のお誕生日を8桁で入力してください
-        </p>
-        <p className="text-xs text-yellow-600 mt-1">
-          例：2020年4月15日 → 20200415
-        </p>
-      </div>
     </div>
   )
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
-import { ChevronLeft, ChevronRight, Send, Loader2, Bone, Bubbles, Heart, Lock, Shield, Tag } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Send, Loader2, Bone, Bubbles, Heart, Lock, Shield, Tag, Sparkles } from 'lucide-react'
 import type { DogProfile } from '@/types/dog'
 import TagSelector from '@/components/common/TagSelector'
 import DateTimePicker from '@/components/common/DateTimePicker'
@@ -23,6 +23,7 @@ export default function OtayoriEntryForm() {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [customDatetime, setCustomDatetime] = useState<string>('')
+  const [generatingComment, setGeneratingComment] = useState(false)
 
   const selectedDog = dogs[selectedDogIndex]
 
@@ -33,6 +34,86 @@ export default function OtayoriEntryForm() {
     return birthDate.getFullYear().toString() + 
            String(birthDate.getMonth() + 1).padStart(2, '0') + 
            String(birthDate.getDate()).padStart(2, '0')
+  }
+
+  // AIコメント生成関数
+  const generateComment = async () => {
+    if (!photoPreview || !type) {
+      alert('写真とおたよりの種類を選択してください')
+      return
+    }
+
+    setGeneratingComment(true)
+    try {
+      console.log('コメント生成リクエスト送信中:', { type })
+      
+      // blob URLをBase64に変換
+      let imageBase64 = ''
+      if (photoPreview.startsWith('blob:')) {
+        console.log('blob URLをBase64に変換中...')
+        
+        // FileReaderを使用して安全にBase64に変換
+        const response = await fetch(photoPreview)
+        const blob = await response.blob()
+        
+        // ファイルサイズチェック（5MB以下）
+        if (blob.size > 5 * 1024 * 1024) {
+          throw new Error('画像サイズが大きすぎます。5MB以下の画像を選択してください。')
+        }
+        
+        imageBase64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => {
+            if (typeof reader.result === 'string') {
+              resolve(reader.result)
+            } else {
+              reject(new Error('FileReader result is not a string'))
+            }
+          }
+          reader.onerror = () => reject(new Error('FileReader failed'))
+          reader.readAsDataURL(blob)
+        })
+        
+        console.log('Base64変換完了')
+      } else {
+        imageBase64 = photoPreview
+      }
+      
+      const response = await fetch('/api/generate-comment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageUrl: imageBase64,
+          type: type
+        })
+      })
+
+      console.log('レスポンスステータス:', response.status)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('API エラーレスポンス:', errorData)
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      console.log('API 成功レスポンス:', data)
+      
+      if (data.success && data.comment) {
+        setContent(data.comment)
+        console.log('コメント設定完了:', data.comment)
+      } else {
+        throw new Error('コメントが生成されませんでした')
+      }
+    } catch (error) {
+      console.error('コメント生成エラー:', error)
+      const errorMessage = error instanceof Error ? error.message : 'コメントの生成に失敗しました'
+      alert(`コメント生成エラー: ${errorMessage}`)
+    } finally {
+      setGeneratingComment(false)
+    }
   }
 
   useEffect(() => {
@@ -159,6 +240,11 @@ export default function OtayoriEntryForm() {
         photo_url = publicUrlData.publicUrl
         
         console.log('画像アップロード成功:', photo_url)
+        if (!photo_url) {
+          alert('画像URLの取得に失敗しました。');
+          setLoading(false);
+          return;
+        }
       } catch (error) {
         console.error('画像アップロード処理中にエラー:', error)
         alert('画像の処理中にエラーが発生しました。')
@@ -256,16 +342,20 @@ export default function OtayoriEntryForm() {
           />
         </div>
 
-        {/* 内容入力 */}
+        {/* 写真アップロード */}
         <div className="bg-white p-5 rounded-xl shadow-sm">
-          <label htmlFor="content" className="font-semibold text-lg mb-3 text-gray-700 block">内容</label>
-          <textarea
-            id="content"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors resize-none"
-            rows={4}
-            placeholder="今日の様子はどうでしたか？"
+          <h3 className="font-semibold text-lg mb-3 text-gray-700">写真</h3>
+          {type === 'poop' && photoPreview && (
+            <div className="mb-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+              <div className="flex items-center gap-2 text-yellow-700">
+                <Lock size={16} />
+                <span className="text-sm font-medium">この画像はプープバッグで保護されます</span>
+              </div>
+            </div>
+          )}
+          <ImageUploader
+            onSelect={handlePhotoSelect}
+            onPreview={handlePhotoPreview}
           />
         </div>
 
@@ -283,6 +373,36 @@ export default function OtayoriEntryForm() {
             />
           </div>
         )}
+
+        {/* コメント入力 */}
+        <div className="bg-white p-5 rounded-xl shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <label htmlFor="content" className="font-semibold text-lg text-gray-700">コメント</label>
+            {photoPreview && type && (
+              <button
+                type="button"
+                onClick={generateComment}
+                disabled={generatingComment}
+                className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {generatingComment ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Sparkles size={16} />
+                )}
+                <span>{generatingComment ? '生成中...' : 'AI生成'}</span>
+              </button>
+            )}
+          </div>
+          <textarea
+            id="content"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors resize-none"
+            rows={4}
+            placeholder="今日の様子はどうでしたか？"
+          />
+        </div>
 
         {/* うんち投稿時のプープバッグ説明 */}
         {type === 'poop' && (
@@ -307,23 +427,6 @@ export default function OtayoriEntryForm() {
             </div>
           </div>
         )}
-
-        {/* 写真アップロード */}
-        <div className="bg-white p-5 rounded-xl shadow-sm">
-          <h3 className="font-semibold text-lg mb-3 text-gray-700">写真</h3>
-          {type === 'poop' && photoPreview && (
-            <div className="mb-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-              <div className="flex items-center gap-2 text-yellow-700">
-                <Lock size={16} />
-                <span className="text-sm font-medium">この画像はプープバッグで保護されます</span>
-              </div>
-            </div>
-          )}
-          <ImageUploader
-            onSelect={handlePhotoSelect}
-            onPreview={handlePhotoPreview}
-          />
-        </div>
         
         {/* 犬選択と記録ボタン */}
         <div className="bg-white p-5 rounded-xl shadow-sm space-y-4">

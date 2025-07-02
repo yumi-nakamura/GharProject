@@ -215,6 +215,8 @@ export default function ProfilePage() {
             {/* 実績カード */}
             <ProfileAchievements user={user} userStats={userStats || undefined} />
 
+
+
             {/* タイムライン */}
             <div className="bg-white rounded-xl p-6 shadow-sm border border-pink-100">
               <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
