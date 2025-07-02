@@ -232,7 +232,7 @@ export default function AIAnalysisCard({
 
       console.log('分析成功:', result.analysis);
       setAnalysis(result.analysis);
-      onAnalysisComplete?.(result.analysis);
+      // 分析完了時に自動でコールバックを呼ばない（保存ボタン押下時に呼ぶ）
 
     } catch (err) {
       console.error('分析エラー:', err);
@@ -255,31 +255,98 @@ export default function AIAnalysisCard({
         throw new Error('認証が必要です');
       }
 
-      // 分析結果をデータベースに保存
-      const { data: savedAnalysis, error: saveError } = await supabase
-        .from('ai_analysis')
-        .insert({
-          user_id: user.id,
-          otayori_id: otayoriId || null,
-          image_url: imageUrl,
-          analysis_type: analysisType,
-          health_score: analysis.health_score,
-          confidence: analysis.confidence,
-          observations: analysis.observations,
-          recommendations: analysis.recommendations,
-          warnings: analysis.warnings,
-          encouragement: analysis.encouragement,
-          details: analysis.details
-        })
-        .select()
-        .single();
+              // 既存の分析結果があるかチェック
+        if (otayoriId) {
+          const { data: existingAnalysis } = await supabase
+            .from('ai_analysis')
+            .select('id')
+            .eq('otayori_id', otayoriId)
+            .single();
 
-      if (saveError) {
-        throw new Error(`保存に失敗しました: ${saveError.message}`);
+        if (existingAnalysis) {
+          // 既存の分析結果がある場合は更新
+          const { data: updatedAnalysis, error: updateError } = await supabase
+            .from('ai_analysis')
+            .update({
+              image_url: imageUrl,
+              analysis_type: analysisType,
+              health_score: analysis.health_score,
+              confidence: analysis.confidence,
+              observations: analysis.observations,
+              recommendations: analysis.recommendations,
+              warnings: analysis.warnings,
+              encouragement: analysis.encouragement,
+              details: analysis.details
+            })
+            .eq('otayori_id', otayoriId)
+            .select()
+            .single();
+
+          if (updateError) {
+            throw new Error(`更新に失敗しました: ${updateError.message}`);
+          }
+
+          console.log('健康レポートに更新成功:', updatedAnalysis);
+          setIsSaved(true);
+        } else {
+          // 新規保存
+          const { data: savedAnalysis, error: saveError } = await supabase
+            .from('ai_analysis')
+            .insert({
+              user_id: user.id,
+              otayori_id: otayoriId,
+              image_url: imageUrl,
+              analysis_type: analysisType,
+              health_score: analysis.health_score,
+              confidence: analysis.confidence,
+              observations: analysis.observations,
+              recommendations: analysis.recommendations,
+              warnings: analysis.warnings,
+              encouragement: analysis.encouragement,
+              details: analysis.details
+            })
+            .select()
+            .single();
+
+          if (saveError) {
+            throw new Error(`保存に失敗しました: ${saveError.message}`);
+          }
+
+          console.log('健康レポートに保存成功:', savedAnalysis);
+          setIsSaved(true);
+        }
+      } else {
+        // otayori_idがない場合は新規保存
+        const { data: savedAnalysis, error: saveError } = await supabase
+          .from('ai_analysis')
+          .insert({
+            user_id: user.id,
+            otayori_id: null,
+            image_url: imageUrl,
+            analysis_type: analysisType,
+            health_score: analysis.health_score,
+            confidence: analysis.confidence,
+            observations: analysis.observations,
+            recommendations: analysis.recommendations,
+            warnings: analysis.warnings,
+            encouragement: analysis.encouragement,
+            details: analysis.details
+          })
+          .select()
+          .single();
+
+        if (saveError) {
+          throw new Error(`保存に失敗しました: ${saveError.message}`);
+        }
+
+        console.log('健康レポートに保存成功:', savedAnalysis);
+        setIsSaved(true);
       }
-
-      console.log('健康レポートに保存成功:', savedAnalysis);
-      setIsSaved(true);
+      
+      // 保存成功時にコールバックを呼ぶ（timelineページ用）
+      if (onAnalysisComplete) {
+        onAnalysisComplete(analysis);
+      }
       
       // 3秒後に保存完了メッセージを消す
       setTimeout(() => {
@@ -427,26 +494,36 @@ export default function AIAnalysisCard({
           {isSaved ? (
             <div className="flex items-center justify-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
               <CheckCircle className="text-green-500" size={20} />
-              <span className="text-green-700 font-medium">健康レポートに保存しました！</span>
+              <span className="text-green-700 font-medium">
+                {otayoriId ? '健康レポートに更新しました！' : '健康レポートに保存しました！'}
+              </span>
             </div>
           ) : (
-            <button
-              onClick={handleSaveToHealthReport}
-              disabled={isSaving}
-              className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-            >
-              {isSaving ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  保存中...
-                </>
-              ) : (
-                <>
-                  <Save size={16} />
-                  健康レポートに保存
-                </>
-              )}
-            </button>
+            <div className="space-y-3">
+              <button
+                onClick={handleSaveToHealthReport}
+                disabled={isSaving}
+                className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                {isSaving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    保存中...
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} />
+                    {otayoriId ? '健康レポートに更新' : '健康レポートに保存'}
+                  </>
+                )}
+              </button>
+              <p className="text-xs text-gray-500 text-center">
+                {otayoriId 
+                  ? 'この分析結果で健康レポートを更新します'
+                  : 'この分析結果を健康レポートに保存して、後で確認できるようにします'
+                }
+              </p>
+            </div>
           )}
         </div>
 

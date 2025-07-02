@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/client"
 import { useAuth } from "@/components/layout/AuthProvider"
 import { ChevronLeft, ChevronRight, Heart, Bone, Bubbles, Activity, Plus, Shield, Users, Zap, Award, Star, LayoutDashboard, Dog, Settings } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
 const supabase = createClient()
 
@@ -563,9 +564,11 @@ function Dashboard({ communityPosts }: { communityPosts: CommunityPost[] }) {
               </div>
               <div className="flex justify-center">
                 <div className="relative">
-                  <img 
+                  <Image 
                     src={selectedDog.image_url || '/images/default-avatar.png'} 
                     alt={selectedDog.name} 
+                    width={128}
+                    height={128}
                     className="w-32 h-32 rounded-full object-cover border-4 border-pink-200 shadow-lg" 
                   />
                   <div className="absolute -bottom-2 -right-2 bg-pink-500 text-white rounded-full p-3 animate-pulse">
@@ -667,9 +670,11 @@ function Dashboard({ communityPosts }: { communityPosts: CommunityPost[] }) {
                   {communityPosts.slice(0, 3).map((post) => (
                     <div key={post.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                       {post.dog?.image_url && (
-                        <img 
+                        <Image 
                           src={post.dog.image_url} 
                           alt={post.dog.name} 
+                          width={32}
+                          height={32}
                           className="w-8 h-8 rounded-full object-cover"
                         />
                       )}

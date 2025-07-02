@@ -5,6 +5,7 @@ import type { DogProfile } from "@/types/dog"
 import { LucideSmile, LucideTag, LucideClock, Brain } from "lucide-react"
 import { useState } from "react"
 import AIAnalysisCard from "./AIAnalysisCard"
+import Image from "next/image"
 
 interface OtayoriCardProps {
   post: OtayoriRecord
@@ -138,7 +139,13 @@ export function OtayoriCard({ post, dog, isAnalyzed = false }: OtayoriCardProps)
         )
       ) : post.photo_url ? (
         <div className="relative">
-          <img src={post.photo_url} alt="OTAYORI画像" className="w-full max-h-48 object-cover rounded-xl border" />
+          <Image 
+            src={post.photo_url} 
+            alt="OTAYORI画像" 
+            width={400}
+            height={200}
+            className="w-full max-h-48 object-cover rounded-xl border" 
+          />
           {/* AI分析ボタン（分析済みでない場合のみ表示） */}
           {shouldShowAnalysisButton() && (
             <button
@@ -179,6 +186,14 @@ export function OtayoriCard({ post, dog, isAnalyzed = false }: OtayoriCardProps)
               imageUrl={post.photo_url}
               analysisType={post.type}
               otayoriId={post.id}
+              onAnalysisComplete={(analysis) => {
+                // 保存完了時の処理
+                console.log('Timeline: 健康レポート保存完了', { otayoriId: post.id, analysis })
+                // 保存完了後にモーダルを閉じる
+                setTimeout(() => {
+                  setShowAIAnalysis(false)
+                }, 2000) // 保存完了メッセージを2秒間表示してから閉じる
+              }}
             />
           </div>
         </div>

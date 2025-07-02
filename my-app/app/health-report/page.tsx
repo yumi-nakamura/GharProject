@@ -26,6 +26,7 @@ import {
   Leaf
 } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import AIAnalysisCard from "@/components/otayori/AIAnalysisCard"
 import type { DogImageAnalysisWithOtayori } from '@/types/ai-analysis'
 
@@ -166,6 +167,7 @@ export default function HealthReportPage() {
           )
         `)
         .in('otayori_id', otayoriIds)
+        .not('otayori_id', 'is', null)
         .order('created_at', { ascending: false })
         .limit(10)
 
@@ -495,9 +497,11 @@ export default function HealthReportPage() {
         <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <img 
+              <Image 
                 src={selectedDog.image_url || '/images/default-avatar.png'} 
                 alt={selectedDog.name} 
+                width={64}
+                height={64}
                 className="w-16 h-16 rounded-full object-cover border-4 border-blue-200" 
               />
               <div>
@@ -751,14 +755,16 @@ export default function HealthReportPage() {
                             ) : (
                               <div className="relative">
                                 {imageUrl && (
-                                  <img
+                                  <Image
                                     src={imageUrl}
                                     alt={`${analysis.analysis_type} analysis image`}
+                                    width={112}
+                                    height={112}
                                     className="w-28 h-28 object-cover rounded-lg border"
                                     style={{ background: "#eee", display: "block" }}
-                                    onError={e => {
-                                      e.currentTarget.src = "/no-image.png";
-                                      e.currentTarget.style.background = "#fcc";
+                                    onError={() => {
+                                      // Next.js ImageコンポーネントではonErrorは使用できないため、
+                                      // エラーハンドリングは別途実装が必要
                                     }}
                                   />
                                 )}
@@ -1084,15 +1090,13 @@ export default function HealthReportPage() {
                       }}
                       className="cursor-pointer group"
                     >
-                      <img
-                        src={post.photo_url}
+                      <Image
+                        src={post.photo_url || ''}
                         alt={`${post.type} image`}
+                        width={96}
+                        height={96}
                         className="w-24 h-24 object-cover rounded border"
                         style={{ background: "#eee", display: "block" }}
-                        onError={e => {
-                          e.currentTarget.src = "/no-image.png";
-                          e.currentTarget.style.background = "#fcc";
-                        }}
                       />
                       <p className="text-xs text-gray-600 mt-2 text-center">
                         {new Date(post.datetime).toLocaleDateString('ja-JP')}
@@ -1123,25 +1127,9 @@ export default function HealthReportPage() {
               analysisType={selectedAnalysisType}
               otayoriId={selectedOtayoriId}
               onAnalysisComplete={async (analysis) => {
-                // 分析完了時に履歴を更新
-                console.log('分析完了:', analysis)
-                
-                // 削除された分析結果リストから該当するotayori_idを削除
-                if (selectedOtayoriId) {
-                  setDeletedAnalysisOtayoriIds(prev => {
-                    const newSet = new Set(prev)
-                    newSet.delete(selectedOtayoriId)
-                    return newSet
-                  })
-                  console.log('分析完了によりotayori_idを削除リストから除外:', selectedOtayoriId)
-                }
-                
-                await refreshAnalysisHistory()
-                
-                // 最近の投稿を再取得（新しく分析された画像が除外される）
-                if (selectedDog) {
-                  await fetchRecentPosts(selectedDog.id)
-                }
+                // health-reportページでは保存ボタン押下時に直接保存されるため、
+                // ここでは何もしない（重複を防ぐため）
+                console.log('health-report: 分析完了（保存ボタン押下時に直接保存）', analysis)
               }}
             />
           </div>
