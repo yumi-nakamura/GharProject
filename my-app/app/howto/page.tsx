@@ -33,10 +33,9 @@ export default function HowToPage() {
             <h2 className="text-lg font-semibold text-orange-600 mb-2">🌟 主な機能</h2>
             <ul className="list-disc pl-6 text-gray-700 space-y-1">
               <li>わんちゃんプロフィール登録・編集</li>
-              <li>食事・うんち・きもち記録</li>
+              <li>ごはん・うんち・きもち記録</li>
               <li>写真付き投稿＆タイムライン</li>
               <li>AIによる健康分析</li>
-              <li>リマインダー通知</li>
               <li>コミュニティで交流</li>
             </ul>
           </section>
