@@ -350,10 +350,23 @@ function LandingPage() {
 
       {/* フッター */}
       <footer className="py-8 px-4 bg-gray-800 text-white">
-        <div className="container mx-auto text-center">
-          <p className="text-gray-400">
-            © 2025 OTAYORI. 愛犬との思い出を大切に。
-          </p>
+        <div className="container mx-auto">
+          <div className="text-center mb-6">
+            <p className="text-gray-400 mb-4">
+              © 2025 OTAYORI. 愛犬との思い出を大切に。
+            </p>
+            <div className="flex flex-wrap justify-center gap-4 text-sm">
+              <Link href="/howto" className="text-gray-300 hover:text-white transition-colors">
+                使い方ガイド
+              </Link>
+              <Link href="/terms" className="text-gray-300 hover:text-white transition-colors">
+                利用規約
+              </Link>
+              <Link href="/about" className="text-gray-300 hover:text-white transition-colors">
+                運営者情報
+              </Link>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

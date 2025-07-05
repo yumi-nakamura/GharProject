@@ -2,7 +2,7 @@
 import type { DogProfile } from '@/types/dog'
 import Image from 'next/image'
 import Link from 'next/link'
-import { PawPrint, Trash2, AlertTriangle } from 'lucide-react'
+import { PawPrint, Trash2, AlertTriangle, Edit, Heart, Calendar } from 'lucide-react'
 import { useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 
@@ -128,48 +128,76 @@ export const DogListItem = ({ dog, onDelete }: { dog: DogProfile; onDelete?: () 
 
   return (
     <>
-      <div className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+      <div className="bg-white rounded-xl shadow-md border border-orange-100 p-4 hover:shadow-lg transition-all duration-200 hover:scale-[1.02]">
         <div className="flex items-center gap-4">
-          {dog.image_url ? (
-            <Image
-              src={dog.image_url}
-              alt={dog.name}
-              width={56}
-              height={56}
-              className="rounded-full object-cover w-14 h-14 border-2 border-orange-200"
-            />
-          ) : (
-            <div className="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center border-2 border-orange-200">
-              <PawPrint className="w-8 h-8 text-orange-400" />
+          {/* わんちゃんの画像 */}
+          <div className="relative">
+            {dog.image_url ? (
+              <Image
+                src={dog.image_url}
+                alt={dog.name}
+                width={64}
+                height={64}
+                className="rounded-full object-cover w-16 h-16 border-4 border-orange-200 shadow-md"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-100 to-yellow-100 flex items-center justify-center border-4 border-orange-200 shadow-md">
+                <PawPrint className="w-8 h-8 text-orange-400" />
+              </div>
+            )}
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-pink-400 to-orange-400 rounded-full flex items-center justify-center">
+              <Heart className="w-3 h-3 text-white" />
             </div>
-          )}
-          <div>
-            <p className="font-bold text-lg text-gray-800">{dog.name}</p>
-            <p className="text-sm text-gray-500">{dog.breed}</p>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link href={`/dog/edit/${dog.id}`}>
-            <span className="px-4 py-2 text-sm font-semibold text-orange-600 bg-orange-100 rounded-full hover:bg-orange-200 transition-colors">
-              編集
-            </span>
-          </Link>
-          <button
-            onClick={() => setShowDeleteModal(true)}
-            className="px-3 py-2 text-sm font-semibold text-red-600 bg-red-100 rounded-full hover:bg-red-200 transition-colors flex items-center gap-1"
-          >
-            <Trash2 size={14} />
-            削除
-          </button>
+          
+          {/* わんちゃんの情報 */}
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-bold text-lg text-gray-800">{dog.name}</h3>
+              {dog.gender && (
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                  dog.gender === 'male' 
+                    ? 'bg-blue-100 text-blue-600' 
+                    : 'bg-pink-100 text-pink-600'
+                }`}>
+                  {dog.gender === 'male' ? '♂' : '♀'}
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-gray-600 mb-2">{dog.breed}</p>
+            {dog.birthday && (
+              <div className="flex items-center gap-1 text-xs text-gray-500">
+                <Calendar className="w-3 h-3" />
+                <span>誕生日: {new Date(dog.birthday).toLocaleDateString('ja-JP')}</span>
+              </div>
+            )}
+          </div>
+          
+          {/* アクションボタン */}
+          <div className="flex items-center gap-2">
+            <Link href={`/dog/edit/${dog.id}`}>
+              <span className="flex items-center gap-1 px-3 py-2 text-sm font-semibold text-orange-600 bg-orange-100 rounded-full hover:bg-orange-200 transition-all duration-200 hover:scale-105">
+                <Edit className="w-4 h-4" />
+                編集
+              </span>
+            </Link>
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="flex items-center gap-1 px-3 py-2 text-sm font-semibold text-red-600 bg-red-100 rounded-full hover:bg-red-200 transition-all duration-200 hover:scale-105"
+            >
+              <Trash2 className="w-4 h-4" />
+              削除
+            </button>
+          </div>
         </div>
       </div>
 
       {/* 削除確認モーダル */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="bg-red-100 p-2 rounded-full">
+              <div className="bg-red-100 p-3 rounded-full">
                 <AlertTriangle className="w-6 h-6 text-red-500" />
               </div>
               <h3 className="text-lg font-bold text-gray-800">わんちゃんの削除</h3>
