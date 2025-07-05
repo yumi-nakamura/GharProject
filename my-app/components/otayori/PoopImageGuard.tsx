@@ -30,23 +30,14 @@ export default function PoopImageGuard({
   }
 
   const handleUnlock = () => {
-    console.log('PoopImageGuard: パスワード認証試行', { 
-      input, 
-      expectedPassword, 
-      dogName,
-      isMatch: input === expectedPassword 
-    })
-    
     if (input === expectedPassword) {
       setUnlocked(true)
       setError(false)
-      console.log('PoopImageGuard: パスワード認証成功')
     } else {
       setError(true)
       setIsShaking(true)
       setTimeout(() => setIsShaking(false), 500)
       setTimeout(() => setError(false), 2000)
-      console.log('PoopImageGuard: パスワード認証失敗')
     }
   }
 

@@ -84,7 +84,6 @@ export function ProfileEditForm({ user, onSave }: ProfileEditFormProps) {
         return
       }
 
-      const fileExt = file.name.split('.').pop()
       const fileName = `${authUser.id}/avatar.jpg`
       
       const { error: uploadError } = await supabase.storage
@@ -317,13 +316,6 @@ export function ProfileEditForm({ user, onSave }: ProfileEditFormProps) {
           <Button
             type="submit"
             disabled={loading}
-            onClick={() => {
-              console.log('保存ボタンクリック')
-              // スマホでのタップ問題を防ぐため、少し遅延を入れる
-              setTimeout(() => {
-                console.log('保存ボタン処理開始')
-              }, 100)
-            }}
           >
             {loading ? (
               <div className="flex items-center gap-2">

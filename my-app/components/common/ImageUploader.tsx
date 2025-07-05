@@ -54,7 +54,7 @@ export function ImageUploader({ onSelect, onPreview, onCropChange, className = "
         
         // HEIC変換の場合はユーザーに通知
         if (isHeicFile(file)) {
-          console.log('HEIC画像をJPEGに変換しました')
+          // HEIC画像をJPEGに変換しました
         }
       } else {
         // サーバーサイドの場合は元のファイルを使用

@@ -268,11 +268,10 @@ export async function POST(request: NextRequest) {
             console.error('一時的なotayoriレコード作成エラー:', tempOtayoriError);
           } else {
             otayori_id = tempOtayori.id;
-            console.log('一時的なotayori_id作成:', otayori_id);
           }
         }
         
-        const { data: savedAnalysis, error: saveError } = await supabase
+        const { error: saveError } = await supabase
           .from('ai_analysis')
           .insert({
             user_id: user.id,
@@ -286,15 +285,11 @@ export async function POST(request: NextRequest) {
             warnings: result.analysis.warnings,
             encouragement: result.analysis.encouragement,
             details: result.analysis.details
-          })
-          .select()
-          .single();
+          });
         
         if (saveError) {
           console.error('分析結果保存エラー:', saveError);
           // 保存エラーでも分析結果は返す
-        } else {
-          console.log('分析結果保存成功:', savedAnalysis);
         }
       } catch (saveError) {
         console.error('分析結果保存中にエラー:', saveError);

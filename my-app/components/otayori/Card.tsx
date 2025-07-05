@@ -20,10 +20,6 @@ export function OtayoriCard({ post, dog, isAnalyzed = false }: OtayoriCardProps)
   // 投稿時に設定されたパスワードがある場合はそれを使用、なければ誕生日から生成
   const getPassword = () => {
     if (post.poopGuardPassword) {
-      console.log('OtayoriCard: 投稿時設定パスワード使用', { 
-        postId: post.id, 
-        password: post.poopGuardPassword 
-      })
       return post.poopGuardPassword
     }
     // 誕生日からパスワードを生成（例：2020年4月15日 → 20200415）
@@ -32,19 +28,8 @@ export function OtayoriCard({ post, dog, isAnalyzed = false }: OtayoriCardProps)
       const password = birthDate.getFullYear().toString() + 
              String(birthDate.getMonth() + 1).padStart(2, '0') + 
              String(birthDate.getDate()).padStart(2, '0')
-      console.log('OtayoriCard: 誕生日からパスワード生成', { 
-        postId: post.id, 
-        dogName: dog.name,
-        birthday: dog.birthday,
-        password 
-      })
       return password
     }
-    console.log('OtayoriCard: パスワード生成失敗', { 
-      postId: post.id, 
-      dogName: dog?.name,
-      hasBirthday: !!dog?.birthday 
-    })
     return ""
   }
 
@@ -198,8 +183,7 @@ export function OtayoriCard({ post, dog, isAnalyzed = false }: OtayoriCardProps)
               imageUrl={post.photo_url || ''}
               analysisType={post.type}
               otayoriId={post.id}
-              onAnalysisComplete={(analysis) => {
-                console.log('AI分析完了:', analysis)
+              onAnalysisComplete={() => {
                 setShowAIAnalysis(false)
               }}
             />

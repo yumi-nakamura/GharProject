@@ -174,19 +174,12 @@ JSONのみを返してください。`;
         }
       }
       
-      const imageContent = request.image_data 
-        ? {
-            type: "image_url" as const,
-            image_url: { 
-              url: dataUrl
-            }
-          }
-        : request.image_url 
-        ? {
-            type: "image_url" as const,
-            image_url: { url: request.image_url }
-          }
-        : null;
+      const imageContent = request.image_data ? {
+        type: "image_url",
+        image_url: {
+          url: `data:${mimeType};base64,${request.image_data}`
+        }
+      } : null;
 
       console.log('画像データ処理結果:', {
         hasImageData: !!request.image_data,
@@ -245,23 +238,8 @@ JSONのみを返してください。`;
         response_format: { type: "json_object" }
         });
       } catch (apiError) {
-        console.error('OpenAI API呼び出しエラー:', apiError);
-        console.error('APIエラーの型:', typeof apiError);
-        console.error('APIエラーの詳細:', apiError);
-        
-        if (apiError instanceof Error) {
-          if (apiError.message.includes('API key')) {
-            throw new Error('OpenAI APIキーが無効です。設定を確認してください。');
-          } else if (apiError.message.includes('rate limit')) {
-            throw new Error('OpenAI APIの利用制限に達しました。しばらく待ってから再試行してください。');
-          } else if (apiError.message.includes('quota')) {
-            throw new Error('OpenAI APIの利用制限に達しました。');
-          } else {
-            throw new Error(`OpenAI APIエラー: ${apiError.message}`);
-          }
-        } else {
-          throw new Error('OpenAI APIで不明なエラーが発生しました');
-        }
+        console.error('OpenAI API エラー:', apiError);
+        throw new Error('AI分析中にエラーが発生しました。もう一度お試しください。');
       }
 
       console.log('OpenAI API応答受信');
@@ -325,20 +303,6 @@ JSONのみを返してください。`;
         console.log('パースされたデータのキー:', Object.keys(analysisData));
       } catch (parseError) {
         console.error('JSONパースエラー:', parseError);
-        console.error('JSONパースエラーの詳細:', parseError instanceof Error ? parseError.message : '不明なエラー');
-        console.error('AI応答内容（最初の500文字）:', content.substring(0, 500));
-        console.error('AI応答内容（最後の500文字）:', content.substring(Math.max(0, content.length - 500)));
-        console.error('抽出されたJSON（最初の500文字）:', jsonContent.substring(0, 500));
-        console.error('抽出されたJSON（最後の500文字）:', jsonContent.substring(Math.max(0, jsonContent.length - 500)));
-        console.error('応答の長さ:', content.length);
-        console.error('抽出されたJSONの長さ:', jsonContent.length);
-        
-        // JSONの構文エラーの詳細を確認
-        if (parseError instanceof SyntaxError) {
-          console.error('JSON構文エラー詳細:', parseError.message);
-          console.error('エラー位置:', parseError.stack);
-        }
-        
         throw new Error('AI分析の結果を解析できませんでした。もう一度お試しください。');
       }
 

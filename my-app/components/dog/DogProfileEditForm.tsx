@@ -83,7 +83,6 @@ export default function DogProfileEditForm({ initialDogData, onComplete }: DogPr
     }
     let finalImageUrl = isEditMode ? initialDogData?.image_url : null
     if (imageFile && initialDogData) {
-      const fileExt = imageFile.name.split('.').pop()
       const fileName = `${user.id}/${initialDogData.id}.jpg`
       const { error: uploadError } = await supabase.storage.from("profile").upload(fileName, imageFile, { upsert: true })
       if (uploadError) {
@@ -132,7 +131,6 @@ export default function DogProfileEditForm({ initialDogData, onComplete }: DogPr
         // 新規登録時も画像アップロード＆image_url更新
         let finalImageUrl = null
         if (imageFile) {
-          const fileExt = imageFile.name.split('.').pop()
           const fileName = `${user.id}/${newDog.id}.jpg`
           const { error: uploadError } = await supabase.storage.from("profile").upload(fileName, imageFile, { upsert: true })
           if (!uploadError) {

@@ -175,15 +175,12 @@ export default function AIAnalysisCard({
   const [isSaved, setIsSaved] = useState(false);
 
   const handleAnalyze = async () => {
-    console.log('AI分析開始');
     setIsLoading(true);
     setError(null);
 
     try {
       // 画像をBase64エンコード
-      console.log('画像Base64変換開始');
       const imageData = await convertImageToBase64(imageUrl);
-      console.log('画像Base64変換完了:', imageData.base64 ? imageData.base64.substring(0, 50) + '...' : '空', 'MIMEタイプ:', imageData.mimeType);
       
       // Base64データが正しい形式かチェック
       if (!imageData.base64 || imageData.base64.length === 0) {
@@ -199,13 +196,6 @@ export default function AIAnalysisCard({
         dog_info: true // 犬の情報も含める
       };
       
-      console.log('APIリクエスト送信:', {
-        hasImageData: !!imageData.base64,
-        imageDataLength: imageData.base64 ? imageData.base64.length : 0,
-        imageMimeType: imageData.mimeType,
-        analysisType: analysisType
-      });
-      
       const response = await fetch('/api/ai-analysis', {
         method: 'POST',
         headers: {
@@ -215,10 +205,7 @@ export default function AIAnalysisCard({
         body: JSON.stringify(requestBody),
       });
 
-      console.log('APIレスポンス:', response.status, response.statusText);
-      
       const result = await response.json();
-      console.log('API結果:', result);
 
       if (!result.success) {
         const errorMessage = result.error || '分析に失敗しました';

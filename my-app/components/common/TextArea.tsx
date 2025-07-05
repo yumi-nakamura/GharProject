@@ -1,7 +1,6 @@
 // 6. common/TextArea.tsx
 export function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    console.log('TextArea onChange:', { value: e.target.value, length: e.target.value.length })
     if (props.onChange) {
       props.onChange(e)
     }

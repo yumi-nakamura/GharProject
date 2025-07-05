@@ -55,7 +55,6 @@ export default function DogForm({ initialDogData, onComplete }: DogFormProps) {
       // 編集時はdog_idが既知
       if (imageFile && initialDogData) {
         setUploading(true)
-        const fileExt = imageFile.name.split('.').pop()
         const fileName = `${user.id}/${initialDogData.id}.jpg`
         const { error: uploadError } = await supabase.storage.from("profile").upload(fileName, imageFile, { upsert: true })
         if (uploadError) {
@@ -108,7 +107,6 @@ export default function DogForm({ initialDogData, onComplete }: DogFormProps) {
     let imageUrl = null
     if (imageFile) {
       setUploading(true)
-      const fileExt = imageFile.name.split('.').pop()
       const fileName = `${user.id}/${newDog.id}.jpg`
       const { error: uploadError } = await supabase.storage.from("profile").upload(fileName, imageFile, { upsert: true })
       if (uploadError) {
@@ -176,10 +174,6 @@ export default function DogForm({ initialDogData, onComplete }: DogFormProps) {
             )}
           </div>
         )}
-      </div>
-
-      <div className="text-xs text-gray-400 break-all p-2 bg-gray-50 rounded">
-        【デバッグ情報】表示URL: {displayUrl || "なし"}
       </div>
 
       <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />

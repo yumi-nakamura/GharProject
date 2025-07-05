@@ -124,8 +124,6 @@ export default function HealthReportPage() {
 
   const fetchAnalysisHistory = useCallback(async (dogId: string) => {
     try {
-      console.log('分析履歴取得開始:', { dogId, userId: user?.id })
-      
       // まず、この犬に関連するotayori投稿のIDを取得
       const { data: otayoriPosts, error: otayoriError } = await supabase
         .from('otayori')
@@ -138,22 +136,13 @@ export default function HealthReportPage() {
       }
       
       const otayoriIds = otayoriPosts?.map(post => post.id) || []
-      console.log('otayori投稿ID:', otayoriIds)
       
       if (otayoriIds.length === 0) {
-        console.log('otayori投稿が見つかりません')
         setAnalysisHistory([])
         return
       }
       
-      console.log('otayori投稿が見つかりました:', otayoriIds.length, '件')
-      
       // AI分析履歴を取得（otayori_idでフィルタリング）
-      console.log('AI分析履歴クエリ実行:', {
-        otayoriIds: otayoriIds,
-        query: `SELECT * FROM ai_analysis WHERE otayori_id IN (${otayoriIds.join(',')}) ORDER BY created_at DESC LIMIT 10`
-      });
-      
       const { data: history, error } = await supabase
         .from('ai_analysis')
         .select(`
@@ -177,18 +166,12 @@ export default function HealthReportPage() {
         return
       }
 
-      console.log('取得した分析履歴:', history)
-      console.log('分析履歴の長さ:', history?.length || 0)
-      console.log('各分析のotayori情報:', history?.map(h => ({
-        id: h.id,
-        otayori_id: h.otayori_id,
-        otayori: h.otayori
-      })))
       setAnalysisHistory(history || [])
     } catch (error) {
-      console.error('分析履歴取得エラー:', error)
+      console.error('分析履歴取得中にエラー:', error)
+      setAnalysisHistory([])
     }
-  }, [user?.id])
+  }, [])
 
   // 分析履歴を即座に更新する関数
   const refreshAnalysisHistory = useCallback(async () => {
@@ -712,13 +695,7 @@ export default function HealthReportPage() {
             </div>
 
             {/* AI分析履歴 */}
-            {(() => {
-              console.log('AI分析履歴表示条件チェック:', {
-                analysisHistoryLength: analysisHistory.length,
-                analysisHistory: analysisHistory
-              });
-              return analysisHistory.length > 0;
-            })() && (
+            {analysisHistory.length > 0 && (
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 shadow-sm border border-blue-200 mb-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
@@ -1126,10 +1103,9 @@ export default function HealthReportPage() {
               imageUrl={selectedImageUrl}
               analysisType={selectedAnalysisType}
               otayoriId={selectedOtayoriId}
-              onAnalysisComplete={async (analysis) => {
+              onAnalysisComplete={async () => {
                 // health-reportページでは保存ボタン押下時に直接保存されるため、
                 // ここでは何もしない（重複を防ぐため）
-                console.log('health-report: 分析完了（保存ボタン押下時に直接保存）', analysis)
               }}
             />
           </div>
