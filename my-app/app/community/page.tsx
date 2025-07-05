@@ -534,7 +534,7 @@ export default function CommunityPage() {
                 }`}
               >
                 {/* 画像 */}
-                {isValidImageUrl ? (
+                {isValidImageUrl && post.photo_url ? (
                   <div className="relative h-48 overflow-hidden">
                     <Image
                       src={post.photo_url}
