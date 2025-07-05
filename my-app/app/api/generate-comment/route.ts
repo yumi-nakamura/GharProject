@@ -5,8 +5,8 @@ export async function POST(request: NextRequest) {
   try {
     console.log('generate-comment API 開始')
     
-    const { imageUrl, type } = await request.json()
-    console.log('リクエストデータ:', { imageUrl, type })
+    const { imageUrl, type, dogName } = await request.json()
+    console.log('リクエストデータ:', { imageUrl, type, dogName })
 
     if (!imageUrl) {
       console.log('エラー: 画像URLがありません')
@@ -41,10 +41,11 @@ export async function POST(request: NextRequest) {
     if (!openaiApiKey) {
       console.log('警告: OpenAI APIキーが設定されていません。テスト用コメントを返します。')
       // テスト用のコメントを返す
+      const dogNameText = dogName || 'わんちゃん'
       const testComments = {
-        meal: '今日も美味しそうに食べてくれて嬉しい！お気に入りのごはん、完食だね！',
-        poop: '健康なうんちで良かった！今日も元気に排泄できてるね。',
-        emotion: 'とっても楽しそうな表情だね！リラックスして気持ちよさそう。'
+        meal: `${dogNameText}、今日も完食だね！おいしそうに食べてくれてママ（パパ）も嬉しいよ〜 もっと食べる？でもお腹いっぱいかな？`,
+        poop: `今日も元気にうんちできてるね！健康な証拠だよ〜 お疲れ様！スッキリしたかな？ママ（パパ）も安心だよ`,
+        emotion: `${dogNameText}、とっても楽しそうな表情だね！ママ（パパ）も見てて幸せ〜 リラックスして気持ちよさそう！今日もいい子にしてくれてありがとう`
       }
       return NextResponse.json({ 
         comment: testComments[type as keyof typeof testComments],
@@ -95,10 +96,11 @@ export async function POST(request: NextRequest) {
     }
 
     // タイプに応じたプロンプトを設定
+    const dogNameText = dogName || 'わんちゃん'
     const typePrompts = {
-      meal: 'この写真は犬の食事に関する写真です。愛らしく、親しみやすい口調で、この食事の様子について自然なコメントを生成してください。例：「今日も美味しそうに食べてくれて嬉しい！」「お気に入りのごはん、完食だね！」など。',
-      poop: 'この写真は犬の排泄物に関する写真です。健康管理の観点から、親しみやすく、励ましの言葉を含むコメントを生成してください。例：「健康なうんちで良かった！」「今日も元気に排泄できてるね」など。',
-      emotion: 'この写真は犬の表情や様子に関する写真です。愛らしく、感情豊かな口調で、この瞬間の様子について自然なコメントを生成してください。例：「とっても楽しそうな表情だね！」「リラックスして気持ちよさそう」など。'
+      meal: `この写真は愛犬${dogNameText}の食事の様子です。飼い主として、愛犬${dogNameText}が美味しそうに食べている姿を見て嬉しくなるような、温かく愛らしいコメントを生成してください。例：「${dogNameText}、今日も完食だね！おいしそうに食べてくれてママ（パパ）も嬉しいよ〜」「ごはんタイムが一番楽しそう！もっと食べる？でもお腹いっぱいかな？」など、飼い主の愛情が伝わる自然なコメントをお願いします。`,
+      poop: `この写真は愛犬${dogNameText}の排泄の様子です。飼い主として、愛犬${dogNameText}の健康を気遣いながらも、温かく見守るようなコメントを生成してください。例：「今日も元気にうんちできてるね！健康な証拠だよ〜」「お疲れ様！スッキリしたかな？ママ（パパ）も安心だよ」など、愛犬${dogNameText}の健康を喜ぶ飼い主の気持ちが伝わるコメントをお願いします。`,
+      emotion: `この写真は愛犬${dogNameText}の表情や様子です。飼い主として、愛犬${dogNameText}の可愛らしさや幸せそうな様子を見て心が癒されるような、愛情たっぷりのコメントを生成してください。例：「${dogNameText}、とっても楽しそうな表情だね！ママ（パパ）も見てて幸せ〜」「リラックスして気持ちよさそう！今日もいい子にしてくれてありがとう」など、愛犬${dogNameText}への愛情が溢れる自然なコメントをお願いします。`
     }
 
     const prompt = typePrompts[type as keyof typeof typePrompts]
@@ -107,6 +109,7 @@ export async function POST(request: NextRequest) {
     // OpenAI APIリクエスト
     console.log('OpenAI APIリクエスト送信中...')
     try {
+      const systemMessage = `あなたは愛犬${dogNameText}の飼い主です。愛犬${dogNameText}の写真を見て、愛情たっぷりの温かいコメントを生成してください。飼い主として、愛犬${dogNameText}の可愛らしさや健康を喜び、自然で親しみやすい表現を使ってください。`
       const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -118,7 +121,7 @@ export async function POST(request: NextRequest) {
           messages: [
             {
               role: 'system',
-              content: 'あなたは愛犬の写真を見て、親しみやすく温かいコメントを生成するアシスタントです。日本語で、愛らしく、励ましの言葉を含む自然なコメントを生成してください。'
+              content: systemMessage
             },
             {
               role: 'user',
@@ -137,7 +140,7 @@ export async function POST(request: NextRequest) {
             }
           ],
           max_tokens: 150,
-          temperature: 0.7
+          temperature: 0.8
         })
       })
 
@@ -171,10 +174,11 @@ export async function POST(request: NextRequest) {
       console.log('フォールバック: テスト用コメントを返します')
       
       // フォールバック: テスト用のコメントを返す
+      const dogNameText = dogName || 'わんちゃん'
       const testComments = {
-        meal: '今日も美味しそうに食べてくれて嬉しい！お気に入りのごはん、完食だね！',
-        poop: '健康なうんちで良かった！今日も元気に排泄できてるね。',
-        emotion: 'とっても楽しそうな表情だね！リラックスして気持ちよさそう。'
+        meal: `${dogNameText}、今日も完食だね！おいしそうに食べてくれてママ（パパ）も嬉しいよ〜 もっと食べる？でもお腹いっぱいかな？`,
+        poop: `今日も元気にうんちできてるね！健康な証拠だよ〜 お疲れ様！スッキリしたかな？ママ（パパ）も安心だよ`,
+        emotion: `${dogNameText}、とっても楽しそうな表情だね！ママ（パパ）も見てて幸せ〜 リラックスして気持ちよさそう！今日もいい子にしてくれてありがとう`
       }
       
       return NextResponse.json({ 

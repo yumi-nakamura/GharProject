@@ -86,7 +86,8 @@ export default function OtayoriEntryForm() {
         },
         body: JSON.stringify({
           imageUrl: imageBase64,
-          type: type
+          type: type,
+          dogName: selectedDog.name
         })
       })
 
