@@ -101,15 +101,16 @@ export function ImageUploader({ onSelect, onPreview, className = "" }: ImageUplo
         )}
         
         <input
-          type="file"
-          hidden
-          accept="image/*,.heic,.heif"
           ref={fileInputRef}
+          type="file"
+          accept="image/*,.heic,.heif"
+          capture="environment"
           onChange={(e) => {
             if (e.target.files && e.target.files.length > 0) {
               handleFileSelect(e.target.files[0])
             }
           }}
+          className="hidden"
         />
       </div>
     </div>

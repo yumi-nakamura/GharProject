@@ -154,9 +154,12 @@ export default function DogForm({ initialDogData, onComplete }: DogFormProps) {
 
       <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
       
-      <TextInput label="名前" placeholder="ポチ" value={name} onChange={(e) => setName(e.target.value)} />
-      <TextInput label="犬種" placeholder="柴犬" value={breed} onChange={(e) => setBreed(e.target.value)} />
-      <TextInput label="誕生日" type="date" placeholder="誕生日" value={birthday} onChange={(e) => setBirthday(e.target.value)} />
+      <label className="block mb-1 font-semibold text-gray-700">名前</label>
+      <TextInput placeholder="ポチ" value={name} onChange={(e) => setName(e.target.value)} />
+      <label className="block mb-1 font-semibold text-gray-700">犬種</label>
+      <TextInput placeholder="柴犬" value={breed} onChange={(e) => setBreed(e.target.value)} />
+      <label className="block mb-1 font-semibold text-gray-700">誕生日</label>
+      <TextInput type="date" placeholder="誕生日" value={birthday} onChange={(e) => setBirthday(e.target.value)} />
       <div>
         <label className="block mb-2 font-semibold text-gray-700">性別</label>
         <div className="flex gap-4 items-center bg-gray-50 p-2 rounded-lg">
@@ -165,7 +168,8 @@ export default function DogForm({ initialDogData, onComplete }: DogFormProps) {
           <label className={`flex-1 text-center py-2 rounded-lg cursor-pointer transition-colors ${gender === "未回答" ? 'bg-gray-400 text-white shadow' : 'bg-white'}`}><input type="radio" name="gender" value="未回答" checked={gender === "未回答"} onChange={() => setGender("未回答")} className="hidden" /> 未回答</label>
         </div>
       </div>
-      <TextInput label="体重(kg)" type="number" placeholder="5.5" value={weight} onChange={(e) => setWeight(e.target.value)} min="0" step="0.1" />
+      <label className="block mb-1 font-semibold text-gray-700">体重(kg)</label>
+      <TextInput type="number" placeholder="5.5" value={weight} onChange={(e) => setWeight(e.target.value)} min="0" step="0.1" />
       <div>
         <label className="block mb-1 font-semibold text-gray-700">性格・特徴</label>
         <textarea className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition" placeholder="甘えん坊で、お散歩が大好き！" value={character} onChange={e => setCharacter(e.target.value)} rows={3} />

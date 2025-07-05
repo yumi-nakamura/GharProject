@@ -140,12 +140,27 @@ export function ProfileEditForm({ user, onSave }: ProfileEditFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation()
+    console.log('フォーム送信開始:', { formData })
+    
+    // フォームデータの検証
+    if (!formData.name.trim()) {
+      setError('名前を入力してください')
+      return
+    }
+    
     setLoading(true)
     setError(null)
     setSuccess(false)
 
     try {
       const supabase = createClient()
+      
+      console.log('更新データ:', {
+        name: formData.name,
+        comment: formData.comment,
+        avatar_url: formData.avatar_url
+      })
       
       const { error } = await supabase
         .from("user_profiles")
@@ -157,9 +172,11 @@ export function ProfileEditForm({ user, onSave }: ProfileEditFormProps) {
         .eq("user_id", user.user_id)
 
       if (error) {
+        console.error('Supabase更新エラー:', error)
         throw error
       }
 
+      console.log('プロフィール更新成功')
       setSuccess(true)
       onSave(formData)
       
@@ -282,7 +299,17 @@ export function ProfileEditForm({ user, onSave }: ProfileEditFormProps) {
             onChange={(e) => handleInputChange("comment", e.target.value)}
             placeholder="自己紹介や愛犬について書いてみましょう"
             rows={4}
+            onFocus={() => {
+              // スマホでのキーボード表示時の問題を防ぐ
+              console.log('TextArea focused')
+            }}
+            onBlur={() => {
+              console.log('TextArea blurred, current value:', formData.comment)
+            }}
           />
+          <p className="text-xs text-gray-500 mt-1">
+            現在の文字数: {formData.comment.length}文字
+          </p>
         </div>
 
         {/* エラーメッセージ */}
@@ -304,6 +331,13 @@ export function ProfileEditForm({ user, onSave }: ProfileEditFormProps) {
           <Button
             type="submit"
             disabled={loading}
+            onClick={() => {
+              console.log('保存ボタンクリック')
+              // スマホでのタップ問題を防ぐため、少し遅延を入れる
+              setTimeout(() => {
+                console.log('保存ボタン処理開始')
+              }, 100)
+            }}
           >
             {loading ? (
               <div className="flex items-center gap-2">

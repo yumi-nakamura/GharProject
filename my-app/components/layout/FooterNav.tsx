@@ -62,7 +62,7 @@ function NavIcon({ icon, href, highlight, disabled, tooltip }: { icon: ReactElem
     <span className="relative group flex-1 flex justify-center">
       <Link
         href={disabled ? "#" : href}
-        className={`flex items-center justify-center w-10 h-10 text-center transition-all ${disabled ? 'opacity-40 pointer-events-none cursor-not-allowed' : 'text-gray-600 hover:text-orange-500'}`}
+        className={`flex items-center justify-center w-12 h-12 text-center transition-all touch-manipulation ${disabled ? 'opacity-40 pointer-events-none cursor-not-allowed' : 'text-gray-600 hover:text-orange-500'}`}
         onClick={e => { if (disabled) e.preventDefault() }}
       >
         {icon}

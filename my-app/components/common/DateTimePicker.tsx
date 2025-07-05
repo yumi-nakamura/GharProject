@@ -82,7 +82,7 @@ export default function DateTimePicker({ value, onChange, label = "投稿日時"
             type="date"
             value={date}
             onChange={(e) => handleDateChange(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 focus:ring-2 focus:ring-orange-500 focus:border-transparent min-h-[44px] text-base"
           />
         </div>
         
@@ -92,7 +92,7 @@ export default function DateTimePicker({ value, onChange, label = "投稿日時"
             type="time"
             value={time}
             onChange={(e) => handleTimeChange(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className="w-full border border-gray-300 rounded-lg px-3 py-3 focus:ring-2 focus:ring-orange-500 focus:border-transparent min-h-[44px] text-base"
           />
         </div>
       </div>

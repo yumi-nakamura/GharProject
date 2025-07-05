@@ -63,6 +63,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '画像データと分析タイプが必要です' }, { status: 400 });
     }
 
+    // Base64データの検証
+    if (body.image_data) {
+      console.log('Base64データ検証開始');
+      console.log('Base64データ長:', body.image_data.length);
+      console.log('Base64データ（最初の50文字）:', body.image_data.substring(0, 50));
+      console.log('Base64データ（最後の50文字）:', body.image_data.substring(Math.max(0, body.image_data.length - 50)));
+      
+      // Base64文字列の形式チェック
+      const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+      if (!base64Regex.test(body.image_data)) {
+        console.error('Base64データの形式が正しくありません');
+        return NextResponse.json({ 
+          error: '画像データの形式が正しくありません。もう一度お試しください。',
+          details: 'Base64データの形式エラー'
+        }, { status: 400 });
+      }
+      
+      // Base64データの長さチェック（最小・最大）
+      if (body.image_data.length < 100) {
+        console.error('Base64データが短すぎます');
+        return NextResponse.json({ 
+          error: '画像データが小さすぎます。別の画像をお試しください。',
+          details: 'Base64データが短すぎる'
+        }, { status: 400 });
+      }
+      
+      if (body.image_data.length > 10 * 1024 * 1024) { // 10MB制限
+        console.error('Base64データが大きすぎます');
+        return NextResponse.json({ 
+          error: '画像サイズが大きすぎます。5MB以下の画像をお試しください。',
+          details: 'Base64データが大きすぎる'
+        }, { status: 400 });
+      }
+      
+      console.log('Base64データ検証完了');
+    }
+
     // 犬の情報を取得（オプション）
     let dogInfo: { breed?: string; age?: number; weight?: number; medical_history?: string[] } | undefined = undefined;
     if (body.dog_info) {

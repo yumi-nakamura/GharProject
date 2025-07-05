@@ -5,6 +5,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { FooterNav } from "@/components/layout/FooterNav";
 import { ProfileStatusProvider } from "@/components/layout/ProfileStatusProvider";
 import { AuthProvider } from "@/components/layout/AuthProvider";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -53,6 +54,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
@@ -63,6 +70,7 @@ export default function RootLayout({
             <FooterNav />
           </ProfileStatusProvider>
         </AuthProvider>
+        <SpeedInsights />
       </body>
     </html>
   );

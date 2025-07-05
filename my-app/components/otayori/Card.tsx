@@ -2,7 +2,7 @@
 import PoopImageGuard from "@/components/otayori/PoopImageGuard"
 import type { OtayoriRecord } from "@/types/otayori"
 import type { DogProfile } from "@/types/dog"
-import { LucideSmile, LucideTag, LucideClock, Brain } from "lucide-react"
+import { LucideSmile, LucideTag, LucideClock, Brain, X } from "lucide-react"
 import { useState } from "react"
 import AIAnalysisCard from "./AIAnalysisCard"
 import Image from "next/image"
@@ -182,29 +182,25 @@ export function OtayoriCard({ post, dog, isAnalyzed = false }: OtayoriCardProps)
       )}
 
       {/* AI分析モーダル */}
-      {showAIAnalysis && post.photo_url && isValidImageUrl(post.photo_url) && (
+      {showAIAnalysis && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl p-6 shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto overscroll-contain">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-800">AI健康分析</h3>
+              <h3 className="text-lg font-semibold text-gray-800">🤖 AI健康分析</h3>
               <button
                 onClick={() => setShowAIAnalysis(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 p-2"
               >
-                ✕
+                <X size={20} />
               </button>
             </div>
             <AIAnalysisCard
-              imageUrl={post.photo_url}
+              imageUrl={post.photo_url || ''}
               analysisType={post.type}
               otayoriId={post.id}
               onAnalysisComplete={(analysis) => {
-                // 保存完了時の処理
-                console.log('Timeline: 健康レポート保存完了', { otayoriId: post.id, analysis })
-                // 保存完了後にモーダルを閉じる
-                setTimeout(() => {
-                  setShowAIAnalysis(false)
-                }, 2000) // 保存完了メッセージを2秒間表示してから閉じる
+                console.log('AI分析完了:', analysis)
+                setShowAIAnalysis(false)
               }}
             />
           </div>

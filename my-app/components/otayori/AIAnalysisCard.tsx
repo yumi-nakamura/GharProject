@@ -76,23 +76,7 @@ const convertImageToBase64 = async (imageUrl: string): Promise<{ base64: string;
           throw new Error(`サポートされていないファイル形式です: ${blob.type}`);
         }
         
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const result = reader.result as string;
-            console.log('FileReader結果:', result.substring(0, 100) + '...');
-            // data:image/jpeg;base64, の部分を除去してBase64部分のみを取得
-            const base64 = result.split(',')[1];
-            const mimeType = result.split(',')[0].split(':')[1].split(';')[0];
-            console.log('Base64変換完了:', base64 ? base64.substring(0, 50) + '...' : '空', 'MIMEタイプ:', mimeType);
-            resolve({ base64, mimeType });
-          };
-          reader.onerror = (error) => {
-            console.error('FileReaderエラー:', error);
-            reject(error);
-          };
-          reader.readAsDataURL(blob);
-        });
+        return await processImageBlob(blob);
       }
       
       if (!data) {
@@ -100,24 +84,7 @@ const convertImageToBase64 = async (imageUrl: string): Promise<{ base64: string;
       }
       
       console.log('Supabase Storage取得成功:', data.size, 'bytes, type:', data.type);
-      
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          console.log('FileReader結果:', result.substring(0, 100) + '...');
-          // data:image/jpeg;base64, の部分を除去してBase64部分のみを取得
-          const base64 = result.split(',')[1];
-          const mimeType = result.split(',')[0].split(':')[1].split(';')[0];
-          console.log('Base64変換完了:', base64 ? base64.substring(0, 50) + '...' : '空', 'MIMEタイプ:', mimeType);
-          resolve({ base64, mimeType });
-        };
-        reader.onerror = (error) => {
-          console.error('FileReaderエラー:', error);
-          reject(error);
-        };
-        reader.readAsDataURL(data);
-      });
+      return await processImageBlob(data);
     } else {
       // 通常のURLの場合は直接fetch
       response = await fetch(imageUrl);
@@ -141,28 +108,58 @@ const convertImageToBase64 = async (imageUrl: string): Promise<{ base64: string;
         throw new Error(`サポートされていないファイル形式です: ${blob.type}`);
       }
       
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          console.log('FileReader結果:', result.substring(0, 100) + '...');
-          // data:image/jpeg;base64, の部分を除去してBase64部分のみを取得
-          const base64 = result.split(',')[1];
-          const mimeType = result.split(',')[0].split(':')[1].split(';')[0];
-          console.log('Base64変換完了:', base64 ? base64.substring(0, 50) + '...' : '空', 'MIMEタイプ:', mimeType);
-          resolve({ base64, mimeType });
-        };
-        reader.onerror = (error) => {
-          console.error('FileReaderエラー:', error);
-          reject(error);
-        };
-        reader.readAsDataURL(blob);
-      });
+      return await processImageBlob(blob);
     }
   } catch (error) {
     console.error('画像変換エラー:', error);
     throw new Error('画像の変換に失敗しました');
   }
+};
+
+// 画像Blobを処理する共通関数
+const processImageBlob = async (blob: Blob): Promise<{ base64: string; mimeType: string }> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const result = reader.result as string;
+        console.log('FileReader結果:', result.substring(0, 100) + '...');
+        
+        // data:image/jpeg;base64, の部分を除去してBase64部分のみを取得
+        const parts = result.split(',');
+        if (parts.length !== 2) {
+          throw new Error('Base64データの形式が正しくありません');
+        }
+        
+        const base64 = parts[1];
+        const mimeType = parts[0].split(':')[1].split(';')[0];
+        
+        // Base64データの検証
+        if (!base64 || base64.length === 0) {
+          throw new Error('Base64データが空です');
+        }
+        
+        // Base64文字列の形式チェック（英数字、+、/、=のみ）
+        const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+        if (!base64Regex.test(base64)) {
+          throw new Error('Base64データの形式が正しくありません');
+        }
+        
+        console.log('Base64変換完了:', base64.substring(0, 50) + '...', 'MIMEタイプ:', mimeType);
+        console.log('Base64データ長:', base64.length);
+        
+        resolve({ base64, mimeType });
+      } catch (error) {
+        console.error('Base64処理エラー:', error);
+        reject(error);
+      }
+    };
+    reader.onerror = (error) => {
+      console.error('FileReaderエラー:', error);
+      reject(error);
+    };
+    reader.readAsDataURL(blob);
+  });
 };
 
 export default function AIAnalysisCard({ 
@@ -236,7 +233,23 @@ export default function AIAnalysisCard({
 
     } catch (err) {
       console.error('分析エラー:', err);
-      setError(err instanceof Error ? err.message : '分析中にエラーが発生しました');
+      let errorMessage = '分析中にエラーが発生しました';
+      
+      if (err instanceof Error) {
+        if (err.message.includes('Base64')) {
+          errorMessage = '画像の形式に問題があります。別の画像をお試しください。';
+        } else if (err.message.includes('形式')) {
+          errorMessage = '画像データの形式が正しくありません。もう一度お試しください。';
+        } else if (err.message.includes('大きすぎ')) {
+          errorMessage = '画像サイズが大きすぎます。5MB以下の画像をお試しください。';
+        } else if (err.message.includes('小さすぎ')) {
+          errorMessage = '画像データが小さすぎます。別の画像をお試しください。';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

@@ -154,6 +154,26 @@ JSONのみを返してください。`;
         imageDataLength: request.image_data ? request.image_data.length : 0
       });
       
+      // Base64データの最終検証
+      if (request.image_data) {
+        const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+        if (!base64Regex.test(request.image_data)) {
+          console.error('Base64データの形式が正しくありません（最終検証）');
+          throw new Error('画像データの形式が正しくありません。もう一度お試しください。');
+        }
+        
+        // データサイズの最終チェック
+        if (request.image_data.length < 100) {
+          console.error('Base64データが短すぎます（最終検証）');
+          throw new Error('画像データが小さすぎます。別の画像をお試しください。');
+        }
+        
+        if (request.image_data.length > 10 * 1024 * 1024) {
+          console.error('Base64データが大きすぎます（最終検証）');
+          throw new Error('画像サイズが大きすぎます。5MB以下の画像をお試しください。');
+        }
+      }
+      
       const imageContent = request.image_data 
         ? {
             type: "image_url" as const,

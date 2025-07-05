@@ -5,7 +5,7 @@ export function Button({ children, onClick, disabled, type }: { children: React.
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className="bg-orange-400 hover:bg-orange-500 text-white font-semibold px-4 py-2 rounded disabled:opacity-50"
+      className="bg-orange-400 hover:bg-orange-500 text-white font-semibold px-4 py-2 rounded disabled:opacity-50 min-h-[44px] min-w-[44px] touch-manipulation"
     >
       {children}
     </button>
