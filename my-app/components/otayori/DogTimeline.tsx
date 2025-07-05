@@ -13,9 +13,10 @@ const supabase = createClient()
 function groupByDate(posts: OtayoriRecord[]) {
   return posts.reduce((acc, post) => {
     const displayDatetime = post.customDatetime || post.datetime
-    // 日本時間に変換して日付を取得
+    // 正しい日本時間変換
     const date = new Date(displayDatetime)
-    const japanTime = new Date(date.toLocaleString("en-US", {timeZone: "Asia/Tokyo"}))
+    // UTC時刻を日本時間（JST）に変換
+    const japanTime = new Date(date.getTime() + (9 * 60 * 60 * 1000))
     const dateString = format(japanTime, "yyyy-MM-dd")
     if (!acc[dateString]) acc[dateString] = []
     acc[dateString].push(post)
@@ -72,7 +73,7 @@ export function DogTimeline({ dogs }: { dogs: DogProfile[] }) {
           type: String(item.type) as 'meal' | 'poop' | 'emotion',
           content: String(item.content),
           datetime: String(item.datetime),
-          photo_url: String(item.photo_url),
+          photo_url: item.photo_url && String(item.photo_url).trim() !== '' ? String(item.photo_url) : undefined,
           mood: item.mood ? String(item.mood) : undefined,
           tags: Array.isArray(item.tags) ? item.tags as string[] : undefined,
           customDatetime: item.custom_datetime ? String(item.custom_datetime) : undefined,

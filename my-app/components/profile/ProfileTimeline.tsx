@@ -122,7 +122,8 @@ export function ProfileTimeline() {
   // 日本時間に変換して表示
   const formatJapanTime = (isoString: string) => {
     const date = new Date(isoString)
-    const japanTime = new Date(date.toLocaleString("en-US", {timeZone: "Asia/Tokyo"}))
+    // UTC時刻を日本時間（JST）に変換
+    const japanTime = new Date(date.getTime() + (9 * 60 * 60 * 1000))
     return format(japanTime, "M/d HH:mm", { locale: ja })
   }
 

@@ -7,7 +7,7 @@ export interface OtayoriRecord {
   type: OtayoriType
   content: string
   datetime: string
-  photo_url: string
+  photo_url?: string
   mood?: string
   tags?: string[]
   poopGuardPassword?: string

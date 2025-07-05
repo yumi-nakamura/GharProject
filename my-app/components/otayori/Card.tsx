@@ -54,7 +54,8 @@ export function OtayoriCard({ post, dog, isAnalyzed = false }: OtayoriCardProps)
   // 日本時間に変換して表示
   const formatJapanTime = (isoString: string) => {
     const date = new Date(isoString)
-    const japanTime = new Date(date.toLocaleString("en-US", {timeZone: "Asia/Tokyo"}))
+    // UTC時刻を日本時間（JST）に変換
+    const japanTime = new Date(date.getTime() + (9 * 60 * 60 * 1000))
     return japanTime.toLocaleString('ja-JP')
   }
 
@@ -69,7 +70,18 @@ export function OtayoriCard({ post, dog, isAnalyzed = false }: OtayoriCardProps)
 
   // AI分析ボタンを表示するかどうかを判定
   const shouldShowAnalysisButton = () => {
-    return post.photo_url && !isAnalyzed
+    return post.photo_url && post.photo_url.trim() !== '' && !isAnalyzed
+  }
+
+  // 有効な画像URLかどうかを判定
+  const isValidImageUrl = (url: string) => {
+    if (!url || url.trim() === '') return false
+    try {
+      new URL(url)
+      return true
+    } catch {
+      return false
+    }
   }
 
   return (
@@ -101,7 +113,7 @@ export function OtayoriCard({ post, dog, isAnalyzed = false }: OtayoriCardProps)
           </span>
         )}
       </div>
-      {post.type === 'poop' && post.isPoopGuarded && post.photo_url ? (
+      {post.type === 'poop' && post.isPoopGuarded && post.photo_url && isValidImageUrl(post.photo_url) ? (
         <div className="relative">
           <PoopImageGuard imageUrl={post.photo_url} expectedPassword={getPassword()} dogName={dog?.name || "わんちゃん"} />
           {/* プープバッグ画像にもAI分析ボタンを追加 */}
@@ -117,7 +129,7 @@ export function OtayoriCard({ post, dog, isAnalyzed = false }: OtayoriCardProps)
         </div>
       ) : post.type === 'poop' ? (
         // うんち投稿でプープバッグが設定されていない場合も保護
-        post.photo_url ? (
+        post.photo_url && isValidImageUrl(post.photo_url) ? (
           <div className="relative">
             <PoopImageGuard imageUrl={post.photo_url} expectedPassword={getPassword()} dogName={dog?.name || "わんちゃん"} />
             {/* プープバッグ画像にもAI分析ボタンを追加 */}
@@ -137,7 +149,7 @@ export function OtayoriCard({ post, dog, isAnalyzed = false }: OtayoriCardProps)
             <p className="text-sm text-yellow-700">うんちの記録（画像なし）</p>
           </div>
         )
-      ) : post.photo_url ? (
+      ) : post.photo_url && isValidImageUrl(post.photo_url) ? (
         <div className="relative">
           <Image 
             src={post.photo_url} 
@@ -170,7 +182,7 @@ export function OtayoriCard({ post, dog, isAnalyzed = false }: OtayoriCardProps)
       )}
 
       {/* AI分析モーダル */}
-      {showAIAnalysis && post.photo_url && (
+      {showAIAnalysis && post.photo_url && isValidImageUrl(post.photo_url) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">

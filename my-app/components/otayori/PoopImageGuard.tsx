@@ -18,6 +18,17 @@ export default function PoopImageGuard({
   const [error, setError] = useState(false)
   const [isShaking, setIsShaking] = useState(false)
 
+  // 有効な画像URLかどうかを判定
+  const isValidImageUrl = (url: string) => {
+    if (!url || url.trim() === '') return false
+    try {
+      new URL(url)
+      return true
+    } catch {
+      return false
+    }
+  }
+
   const handleUnlock = () => {
     console.log('PoopImageGuard: パスワード認証試行', { 
       input, 
@@ -52,11 +63,20 @@ export default function PoopImageGuard({
           <Eye size={12} />
           解除済み
         </div>
-        <img
-          src={imageUrl}
-          alt="うんち写真"
-          className="w-full max-h-64 object-contain rounded-lg border shadow-sm"
-        />
+        {isValidImageUrl(imageUrl) ? (
+          <img
+            src={imageUrl}
+            alt="うんち写真"
+            className="w-full max-h-64 object-contain rounded-lg border shadow-sm"
+          />
+        ) : (
+          <div className="w-full h-64 bg-gray-100 rounded-lg border flex items-center justify-center">
+            <div className="text-gray-500 text-center">
+              <div className="text-4xl mb-2">📷</div>
+              <p className="text-sm">画像が読み込めません</p>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
