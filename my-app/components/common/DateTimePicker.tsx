@@ -16,9 +16,7 @@ export default function DateTimePicker({ value, onChange, label = "投稿日時"
   // 日本時間を取得する関数
   const getJapanTime = () => {
     const now = new Date()
-    // UTC時刻を日本時間（JST）に変換
-    const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000))
-    return japanTime
+    return now
   }
 
   // 初期値を設定（一度だけ実行）
@@ -33,25 +31,25 @@ export default function DateTimePicker({ value, onChange, label = "投稿日時"
       setTime(japanTime.toTimeString().split(' ')[0].slice(0, 5))
     } else {
       // デフォルトは現在の日本時間
-      const japanNow = getJapanTime()
-      setDate(japanNow.toISOString().split('T')[0])
-      setTime(japanNow.toTimeString().split(' ')[0].slice(0, 5))
+      const now = new Date()
+      setDate(now.toISOString().split('T')[0])
+      setTime(now.toTimeString().split(' ')[0].slice(0, 5))
       
       // 初期値として現在の日本時間をUTC形式で親コンポーネントに通知
-      onChange(japanNow.toISOString())
+      onChange(now.toISOString())
     }
     
     isInitialized.current = true
-  }, [onChange, value]) // 依存関係を追加
+  }, []) // 依存関係を削除して一度だけ実行
 
   // 日付変更時の処理
   const handleDateChange = (newDate: string) => {
     setDate(newDate)
     if (newDate && time) {
-      // 日本時間をUTCに変換して保存
-      const japanDateTime = new Date(`${newDate}T${time}:00+09:00`)
-      // 日本時間からUTCに変換（9時間を引く）
-      const utcDateTime = new Date(japanDateTime.getTime() - (9 * 60 * 60 * 1000))
+      // 日本時間の日時文字列を作成
+      const japanDateTimeString = `${newDate}T${time}:00+09:00`
+      // UTCに変換
+      const utcDateTime = new Date(japanDateTimeString)
       onChange(utcDateTime.toISOString())
     }
   }
@@ -60,10 +58,10 @@ export default function DateTimePicker({ value, onChange, label = "投稿日時"
   const handleTimeChange = (newTime: string) => {
     setTime(newTime)
     if (date && newTime) {
-      // 日本時間をUTCに変換して保存
-      const japanDateTime = new Date(`${date}T${newTime}:00+09:00`)
-      // 日本時間からUTCに変換（9時間を引く）
-      const utcDateTime = new Date(japanDateTime.getTime() - (9 * 60 * 60 * 1000))
+      // 日本時間の日時文字列を作成
+      const japanDateTimeString = `${date}T${newTime}:00+09:00`
+      // UTCに変換
+      const utcDateTime = new Date(japanDateTimeString)
       onChange(utcDateTime.toISOString())
     }
   }
@@ -82,7 +80,7 @@ export default function DateTimePicker({ value, onChange, label = "投稿日時"
             type="date"
             value={date}
             onChange={(e) => handleDateChange(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 focus:ring-2 focus:ring-orange-500 focus:border-transparent min-h-[44px] text-base"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent min-h-[44px] text-base"
           />
         </div>
         
@@ -92,7 +90,7 @@ export default function DateTimePicker({ value, onChange, label = "投稿日時"
             type="time"
             value={time}
             onChange={(e) => handleTimeChange(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-3 focus:ring-2 focus:ring-orange-500 focus:border-transparent min-h-[44px] text-base"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent min-h-[44px] text-base"
           />
         </div>
       </div>

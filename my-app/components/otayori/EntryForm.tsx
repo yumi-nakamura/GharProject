@@ -23,10 +23,11 @@ export default function OtayoriEntryForm() {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [customDatetime, setCustomDatetime] = useState<string>(() => {
-    // 日本時間の現在時刻をUTC形式で設定
+    // 現在の日本時間をUTC形式で設定
     const now = new Date()
-    const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000))
-    return japanTime.toISOString()
+    // 日本時間をUTCに変換（9時間を引く）
+    const utcTime = new Date(now.getTime() - (9 * 60 * 60 * 1000))
+    return utcTime.toISOString()
   })
   const [generatingComment, setGeneratingComment] = useState(false)
 
@@ -339,15 +340,6 @@ export default function OtayoriEntryForm() {
           </div>
         </div>
 
-        {/* 日時選択 */}
-        <div className="bg-white p-5 rounded-xl shadow-sm">
-          <DateTimePicker
-            value={customDatetime}
-            onChange={setCustomDatetime}
-            label="投稿日時"
-          />
-        </div>
-
         {/* 写真アップロード */}
         <div className="bg-white p-5 rounded-xl shadow-sm">
           <h3 className="font-semibold text-lg mb-3 text-gray-700">写真</h3>
@@ -434,8 +426,45 @@ export default function OtayoriEntryForm() {
           </div>
         )}
         
-        {/* 犬選択と記録ボタン */}
+        {/* 投稿日時と犬選択 */}
         <div className="bg-white p-5 rounded-xl shadow-sm space-y-4">
+          {/* 投稿日時（コンパクト版） */}
+          <div className="border-b border-gray-100 pb-4">
+            <h3 className="font-semibold text-lg text-gray-700 mb-3">投稿日時</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">日付</label>
+                <input
+                  type="date"
+                  value={new Date(customDatetime).toISOString().split('T')[0]}
+                  onChange={(e) => {
+                    const newDate = e.target.value
+                    const currentTime = new Date(customDatetime).toTimeString().split(' ')[0].slice(0, 5)
+                    const japanDateTimeString = `${newDate}T${currentTime}:00+09:00`
+                    const utcDateTime = new Date(japanDateTimeString)
+                    setCustomDatetime(utcDateTime.toISOString())
+                  }}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent min-h-[44px] text-base"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">時刻</label>
+                <input
+                  type="time"
+                  value={new Date(new Date(customDatetime).getTime() + (9 * 60 * 60 * 1000)).toTimeString().split(' ')[0].slice(0, 5)}
+                  onChange={(e) => {
+                    const newTime = e.target.value
+                    const currentDate = new Date(customDatetime).toISOString().split('T')[0]
+                    const japanDateTimeString = `${currentDate}T${newTime}:00+09:00`
+                    const utcDateTime = new Date(japanDateTimeString)
+                    setCustomDatetime(utcDateTime.toISOString())
+                  }}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent min-h-[44px] text-base"
+                />
+              </div>
+            </div>
+          </div>
+
           <h3 className="font-semibold text-lg text-gray-700">記録するわんちゃん</h3>
           <div className="flex items-center justify-between bg-orange-50 p-3 rounded-lg">
             <button
