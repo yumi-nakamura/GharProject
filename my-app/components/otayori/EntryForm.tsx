@@ -18,6 +18,7 @@ export default function OtayoriEntryForm() {
   const [content, setContent] = useState('')
   const [photo, setPhoto] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [isPhotoCropped, setIsPhotoCropped] = useState(false)
   const [loading, setLoading] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
@@ -184,6 +185,10 @@ export default function OtayoriEntryForm() {
     setPhotoPreview(url)
   }
 
+  const handlePhotoCropChange = (isCropped: boolean) => {
+    setIsPhotoCropped(isCropped)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -208,15 +213,26 @@ export default function OtayoriEntryForm() {
     let photo_url: string | undefined = undefined
     if (photo) {
       try {
-        const fileExt = photo.name.split('.').pop()?.toLowerCase()
-        if (!fileExt || !['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt)) {
+        // トリミングされた画像がある場合は、プレビューURLからファイルを作成
+        let uploadFile = photo
+        let fileExt = photo.name.split('.').pop()?.toLowerCase() || 'jpg'
+        
+        if (isPhotoCropped && photoPreview && photoPreview.startsWith('data:')) {
+          // トリミングされた画像（Base64）をファイルに変換
+          const response = await fetch(photoPreview)
+          const blob = await response.blob()
+          uploadFile = new File([blob], `cropped-${Date.now()}.jpg`, { type: 'image/jpeg' })
+          fileExt = 'jpg'
+        }
+        
+        if (!['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt)) {
           alert('対応していないファイル形式です。JPG、PNG、GIF、WebP形式の画像を選択してください。')
           setLoading(false)
           return
         }
 
         // ファイルサイズチェック（5MB以下）
-        if (photo.size > 5 * 1024 * 1024) {
+        if (uploadFile.size > 5 * 1024 * 1024) {
           alert('ファイルサイズが大きすぎます。5MB以下の画像を選択してください。')
           setLoading(false)
           return
@@ -224,7 +240,7 @@ export default function OtayoriEntryForm() {
 
         const fileName = `otayori/${selectedDog.id}/${user.id}_${Date.now()}.${fileExt}`
         
-        const { error: uploadError } = await supabase.storage.from('dog-images').upload(fileName, photo, {
+        const { error: uploadError } = await supabase.storage.from('dog-images').upload(fileName, uploadFile, {
           cacheControl: '3600',
           upsert: false
         })
@@ -353,6 +369,7 @@ export default function OtayoriEntryForm() {
           <ImageUploader
             onSelect={handlePhotoSelect}
             onPreview={handlePhotoPreview}
+            onCropChange={handlePhotoCropChange}
           />
         </div>
 

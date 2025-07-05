@@ -12,8 +12,13 @@ export default function DogRegisterPage() {
   // 登録完了時の処理
   const handleComplete = () => {
     if (typeof window !== "undefined") {
-      localStorage.removeItem("dog_profile_skipped")
-      window.location.href = "/"
+      const isFirstDog = localStorage.getItem("dog_profile_skipped") === "1"
+      if (isFirstDog) {
+        localStorage.removeItem("dog_profile_skipped")
+        window.location.href = "/"
+      } else {
+        window.location.href = "/settings"
+      }
     }
   }
   return (

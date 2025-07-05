@@ -99,6 +99,18 @@ export const DogListItem = ({ dog, onDelete }: { dog: DogProfile; onDelete?: () 
         }
       }
 
+      // 画像も削除（profileバケットの{user_id}/{dog_id}.jpg）
+      try {
+        if (!keepRecords && user && dog.id) {
+          const { error: removeError } = await supabase.storage.from('profile').remove([`${user.id}/${dog.id}.jpg`])
+          if (removeError) {
+            console.error('画像削除エラー:', removeError)
+          }
+        }
+      } catch (e) {
+        console.error('画像削除処理エラー:', e)
+      }
+
       setShowDeleteModal(false)
       alert('わんちゃんの削除が完了しました')
       onDelete?.() // 親コンポーネントに削除完了を通知

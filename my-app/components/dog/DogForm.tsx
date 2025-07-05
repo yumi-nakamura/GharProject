@@ -11,7 +11,7 @@ const supabase = createClient()
 
 interface DogFormProps {
   initialDogData?: DogProfile
-  onComplete?: () => void
+  onComplete?: (dog: DogProfile) => void
 }
 
 export default function DogForm({ initialDogData, onComplete }: DogFormProps) {
@@ -51,23 +51,45 @@ export default function DogForm({ initialDogData, onComplete }: DogFormProps) {
 
     let finalImageUrl = isEditMode ? initialDogData?.image_url : null;
 
-    if (imageFile) {
-      setUploading(true)
-      const fileExt = imageFile.name.split('.').pop()
-      const fileName = `${user.id}_${Date.now()}.${fileExt}`
-      const { error: uploadError } = await supabase.storage.from("dog-images").upload(fileName, imageFile)
-
-      if (uploadError) {
+    if (isEditMode) {
+      // 編集時はdog_idが既知
+      if (imageFile && initialDogData) {
+        setUploading(true)
+        const fileExt = imageFile.name.split('.').pop()
+        const fileName = `${user.id}/${initialDogData.id}.jpg`
+        const { error: uploadError } = await supabase.storage.from("profile").upload(fileName, imageFile, { upsert: true })
+        if (uploadError) {
+          setUploading(false)
+          setMessage("画像のアップロードに失敗しました: " + uploadError.message)
+          return
+        }
+        const { data: publicUrlData } = supabase.storage.from("profile").getPublicUrl(fileName)
+        finalImageUrl = publicUrlData.publicUrl
         setUploading(false)
-        setMessage("画像のアップロードに失敗しました: " + uploadError.message)
-        return
       }
-      
-      const { data: publicUrlData } = supabase.storage.from("dog-images").getPublicUrl(fileName)
-      finalImageUrl = publicUrlData.publicUrl
-      setUploading(false)
+      // 更新処理
+      const dogData = {
+        name,
+        breed,
+        birthday: birthday || null,
+        gender,
+        weight: weight ? parseFloat(weight) : null,
+        character,
+        image_url: finalImageUrl,
+        owner_id: user.id,
+      }
+      const { error } = await supabase.from("dogs").update(dogData).eq('id', initialDogData.id)
+      if (error) {
+        setMessage("更新に失敗しました: " + error.message)
+      } else {
+        setMessage("プロフィールを更新しました！")
+        onComplete?.(finalImageUrl ? { ...initialDogData, image_url: finalImageUrl } : initialDogData)
+      }
+      return
     }
 
+    // 新規登録時
+    // まず画像なしでdogsテーブルにinsert
     const dogData = {
       name,
       breed,
@@ -75,32 +97,40 @@ export default function DogForm({ initialDogData, onComplete }: DogFormProps) {
       gender,
       weight: weight ? parseFloat(weight) : null,
       character,
-      image_url: finalImageUrl,
+      image_url: null,
       owner_id: user.id,
     }
-
-    if (isEditMode && initialDogData) {
-      const { error } = await supabase.from("dogs").update(dogData).eq('id', initialDogData.id)
-      if (error) {
-        setMessage("更新に失敗しました: " + error.message)
-      } else {
-        setMessage("プロフィールを更新しました！")
-        onComplete?.()
-      }
-    } else {
-      const { data: newDog, error } = await supabase.from("dogs").insert(dogData).select().single()
-      if (error || !newDog) {
-        setMessage("登録に失敗しました: " + error?.message)
-      } else {
-        const { error: relationError } = await supabase.from("dog_user_relations").insert({ dog_id: newDog.id, user_id: user.id })
-        if (relationError) {
-          setMessage("犬とユーザーの紐付けに失敗しました: " + relationError.message)
-          return
-        }
-        setMessage("新しいわんちゃんを登録しました！")
-        onComplete?.()
-      }
+    const { data: newDog, error } = await supabase.from("dogs").insert(dogData).select().single()
+    if (error || !newDog) {
+      setMessage("登録に失敗しました: " + error?.message)
+      return
     }
+    let imageUrl = null
+    if (imageFile) {
+      setUploading(true)
+      const fileExt = imageFile.name.split('.').pop()
+      const fileName = `${user.id}/${newDog.id}.jpg`
+      const { error: uploadError } = await supabase.storage.from("profile").upload(fileName, imageFile, { upsert: true })
+      if (uploadError) {
+        setUploading(false)
+        setMessage("画像のアップロードに失敗しました: " + uploadError.message)
+        return
+      }
+      const { data: publicUrlData } = supabase.storage.from("profile").getPublicUrl(fileName)
+      imageUrl = publicUrlData.publicUrl
+      setUploading(false)
+      // dogsテーブルのimage_urlを更新
+      await supabase.from("dogs").update({ image_url: imageUrl }).eq('id', newDog.id)
+    }
+    // 最新のレコードを再取得してonComplete
+    const { data: latestDog } = await supabase.from("dogs").select("*").eq("id", newDog.id).single()
+    let imageUrlWithCacheBuster = latestDog?.image_url
+    if (imageUrlWithCacheBuster) {
+      imageUrlWithCacheBuster += `?t=${Date.now()}`
+    }
+    const dogWithCacheBuster = { ...latestDog, image_url: imageUrlWithCacheBuster }
+    setMessage("新しいわんちゃんを登録しました！")
+    onComplete?.(dogWithCacheBuster)
   }
 
   const handleImageClick = () => {

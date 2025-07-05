@@ -82,16 +82,16 @@ export default function DogProfileEditForm({ initialDogData, onComplete }: DogPr
       return
     }
     let finalImageUrl = isEditMode ? initialDogData?.image_url : null
-    if (imageFile) {
+    if (imageFile && initialDogData) {
       const fileExt = imageFile.name.split('.').pop()
-      const fileName = `${user.id}_${Date.now()}.${fileExt}`
-      const { error: uploadError } = await supabase.storage.from("dog-images").upload(fileName, imageFile)
+      const fileName = `${user.id}/${initialDogData.id}.jpg`
+      const { error: uploadError } = await supabase.storage.from("profile").upload(fileName, imageFile, { upsert: true })
       if (uploadError) {
         setMessage("画像のアップロードに失敗しました: " + uploadError.message)
         setUploading(false)
         return
       }
-      const { data: publicUrlData } = supabase.storage.from("dog-images").getPublicUrl(fileName)
+      const { data: publicUrlData } = supabase.storage.from("profile").getPublicUrl(fileName)
       finalImageUrl = publicUrlData.publicUrl
     }
     // dogsテーブルの全カラム
@@ -129,6 +129,18 @@ export default function DogProfileEditForm({ initialDogData, onComplete }: DogPr
       if (error || !newDog) {
         setMessage("登録に失敗しました: " + error?.message)
       } else {
+        // 新規登録時も画像アップロード＆image_url更新
+        let finalImageUrl = null
+        if (imageFile) {
+          const fileExt = imageFile.name.split('.').pop()
+          const fileName = `${user.id}/${newDog.id}.jpg`
+          const { error: uploadError } = await supabase.storage.from("profile").upload(fileName, imageFile, { upsert: true })
+          if (!uploadError) {
+            const { data: publicUrlData } = supabase.storage.from("profile").getPublicUrl(fileName)
+            finalImageUrl = publicUrlData.publicUrl
+            await supabase.from("dogs").update({ image_url: finalImageUrl }).eq('id', newDog.id)
+          }
+        }
         setMessage("新しいわんちゃんを登録しました！")
         onComplete?.()
       }

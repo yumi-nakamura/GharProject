@@ -85,37 +85,23 @@ export function ProfileEditForm({ user, onSave }: ProfileEditFormProps) {
       }
 
       const fileExt = file.name.split('.').pop()
-      const fileName = `avatar_${authUser.id}_${Date.now()}.${fileExt}`
+      const fileName = `${authUser.id}/avatar.jpg`
       
       const { error: uploadError } = await supabase.storage
-        .from("avatars")
+        .from("profile")
         .upload(fileName, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: true
         })
 
       if (uploadError) {
         console.error('アップロードエラー詳細:', uploadError)
-        if (uploadError.message.includes('bucket')) {
-          // ストレージバケットが存在しない場合は、Base64エンコードしてデータベースに保存
-          const reader = new FileReader()
-          reader.onloadend = () => {
-            const base64Data = reader.result as string
-            setFormData(prev => ({
-              ...prev,
-              avatar_url: base64Data
-            }))
-          }
-          reader.readAsDataURL(file)
-          return
-        } else {
-          alert(`画像のアップロードに失敗しました: ${uploadError.message}`)
-        }
+        alert(`画像のアップロードに失敗しました: ${uploadError.message}`)
         return
       }
 
       const { data: publicUrlData } = supabase.storage
-        .from("avatars")
+        .from("profile")
         .getPublicUrl(fileName)
 
       setFormData(prev => ({

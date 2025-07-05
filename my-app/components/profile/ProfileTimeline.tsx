@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
 import { ja } from "date-fns/locale"
-import { Camera, Salad, Bubbles, MessageCircleHeart, Clock, Tag, Trash2, ChevronLeft, ChevronRight, Eye, EyeOff } from "lucide-react"
+import { Camera, Salad, Bubbles, MessageCircleHeart, Clock, Tag, Trash2, ChevronLeft, ChevronRight, Eye, EyeOff, Crop } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
+import { ImageCropModal } from "@/components/common/ImageCropModal"
 
 interface OtayoriItem {
   id: string
@@ -27,6 +28,9 @@ export function ProfileTimeline() {
   const [currentPage, setCurrentPage] = useState(1)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [hidePoopImages, setHidePoopImages] = useState(true)
+  const [cropModalOpen, setCropModalOpen] = useState(false)
+  const [selectedImageUrl, setSelectedImageUrl] = useState("")
+  const [selectedOtayoriId, setSelectedOtayoriId] = useState<string | null>(null)
   const postsPerPage = 15
 
   useEffect(() => {
@@ -107,6 +111,70 @@ export function ProfileTimeline() {
       alert('投稿の削除に失敗しました')
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  // 画像トリミング機能
+  const handleCropImage = (imageUrl: string, otayoriId: string) => {
+    setSelectedImageUrl(imageUrl)
+    setSelectedOtayoriId(otayoriId)
+    setCropModalOpen(true)
+  }
+
+  const handleCropComplete = async (croppedImage: string) => {
+    if (!selectedOtayoriId) return
+
+    try {
+      // 対象投稿を取得
+      const target = otayori.find(item => item.id === selectedOtayoriId)
+      if (!target || !target.photo_url) {
+        alert('画像パスが見つかりません')
+        return
+      }
+
+      // Storageパスを抽出
+      // 例: https://xxx.supabase.co/storage/v1/object/public/dog-images/otayori/{dog_id}/{user_id}_{timestamp}.jpg
+      let storagePath = ''
+      const match = target.photo_url.match(/dog-images\/([^?]+)/)
+      if (match && match[1]) {
+        storagePath = match[1]
+      } else {
+        alert('画像の保存先パスが特定できません')
+        return
+      }
+
+      // Base64画像をBlobに変換
+      const response = await fetch(croppedImage)
+      const blob = await response.blob()
+
+      // Supabase Storageに上書きアップロード
+      const { error: uploadError } = await supabase.storage
+        .from('dog-images')
+        .upload(storagePath, blob, {
+          contentType: 'image/jpeg',
+          cacheControl: '3600',
+          upsert: true
+        })
+
+      if (uploadError) {
+        console.error('画像アップロードエラー:', uploadError)
+        alert('画像のアップロードに失敗しました: ' + (uploadError.message || ''))
+        return
+      }
+
+      // photo_urlは変わらないのでDB更新不要
+      // ローカル状態を更新（キャッシュバスターでURLを一時的に変更して再読込させる）
+      const newImageUrl = target.photo_url + '?t=' + Date.now()
+      setOtayori(prev => prev.map(item => 
+        item.id === selectedOtayoriId 
+          ? { ...item, photo_url: newImageUrl }
+          : item
+      ))
+
+      alert('画像を再トリミングして保存しました')
+    } catch (error) {
+      console.error('画像処理エラー:', error)
+      alert('画像の処理に失敗しました')
     }
   }
 
@@ -228,14 +296,25 @@ export function ProfileTimeline() {
                       <span className="text-orange-600 font-medium">（予約）</span>
                     )}
                   </div>
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    disabled={deletingId === item.id}
-                    className="text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
-                    title="削除"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    {item.photo_url && (
+                      <button
+                        onClick={() => handleCropImage(item.photo_url!, item.id)}
+                        className="text-blue-500 hover:text-blue-700 transition-colors"
+                        title="画像を再トリミング"
+                      >
+                        <Crop size={14} />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      disabled={deletingId === item.id}
+                      className="text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
+                      title="削除"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
               
@@ -322,6 +401,15 @@ export function ProfileTimeline() {
       <div className="text-center text-sm text-gray-500">
         {otayori.length}件の投稿中 {((currentPage - 1) * postsPerPage) + 1} - {Math.min(currentPage * postsPerPage, otayori.length)} を表示
       </div>
+
+      {/* 画像トリミングモーダル */}
+      <ImageCropModal
+        isOpen={cropModalOpen}
+        onClose={() => setCropModalOpen(false)}
+        imageUrl={selectedImageUrl}
+        onCropComplete={handleCropComplete}
+        aspectRatio={1}
+      />
     </div>
   )
 } 
