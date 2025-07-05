@@ -95,6 +95,9 @@ export function ImageUploader({ onSelect, onPreview, className = "" }: ImageUplo
               写真をアップロード
             </div>
             <div className="text-xs text-gray-500">
+              カメラロールまたはカメラから選択できます
+            </div>
+            <div className="text-xs text-gray-400">
               HEIC形式も対応しています
             </div>
           </div>
@@ -104,7 +107,6 @@ export function ImageUploader({ onSelect, onPreview, className = "" }: ImageUplo
           ref={fileInputRef}
           type="file"
           accept="image/*,.heic,.heif"
-          capture="environment"
           onChange={(e) => {
             if (e.target.files && e.target.files.length > 0) {
               handleFileSelect(e.target.files[0])

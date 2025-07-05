@@ -23,11 +23,10 @@ export default function OtayoriEntryForm() {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [customDatetime, setCustomDatetime] = useState<string>(() => {
-    // 日本時間の現在時刻をUTCに変換して初期値として設定
+    // 日本時間の現在時刻をUTC形式で設定
     const now = new Date()
     const japanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000))
-    const utcDateTime = new Date(japanTime.getTime() - (9 * 60 * 60 * 1000))
-    return utcDateTime.toISOString()
+    return japanTime.toISOString()
   })
   const [generatingComment, setGeneratingComment] = useState(false)
 

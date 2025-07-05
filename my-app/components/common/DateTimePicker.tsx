@@ -37,8 +37,8 @@ export default function DateTimePicker({ value, onChange, label = "投稿日時"
       setDate(japanNow.toISOString().split('T')[0])
       setTime(japanNow.toTimeString().split(' ')[0].slice(0, 5))
       
-      // 初期値として現在のUTC時刻を親コンポーネントに通知
-      onChange(new Date().toISOString())
+      // 初期値として現在の日本時間をUTC形式で親コンポーネントに通知
+      onChange(japanNow.toISOString())
     }
     
     isInitialized.current = true
