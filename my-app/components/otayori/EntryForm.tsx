@@ -6,7 +6,6 @@ import { createClient } from '@/utils/supabase/client'
 import { ChevronLeft, ChevronRight, Send, Loader2, Bone, Bubbles, Heart, Lock, Shield, Tag, Sparkles } from 'lucide-react'
 import type { DogProfile } from '@/types/dog'
 import TagSelector from '@/components/common/TagSelector'
-import DateTimePicker from '@/components/common/DateTimePicker'
 import { ImageUploader } from '@/components/common/ImageUploader'
 
 const supabase = createClient()

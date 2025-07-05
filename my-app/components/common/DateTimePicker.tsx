@@ -13,11 +13,7 @@ export default function DateTimePicker({ value, onChange, label = "投稿日時"
   const [time, setTime] = useState('')
   const isInitialized = useRef(false)
 
-  // 日本時間を取得する関数
-  const getJapanTime = () => {
-    const now = new Date()
-    return now
-  }
+
 
   // 初期値を設定（一度だけ実行）
   useEffect(() => {
@@ -40,7 +36,7 @@ export default function DateTimePicker({ value, onChange, label = "投稿日時"
     }
     
     isInitialized.current = true
-  }, []) // 依存関係を削除して一度だけ実行
+  }, [onChange, value]) // 依存関係を追加
 
   // 日付変更時の処理
   const handleDateChange = (newDate: string) => {
