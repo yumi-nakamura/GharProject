@@ -1,11 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { format } from "date-fns"
-import { ja } from "date-fns/locale"
 import { Camera, Salad, Bubbles, MessageCircleHeart, Clock, Tag, Trash2, ChevronLeft, ChevronRight, Eye, EyeOff, Crop } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { ImageCropModal } from "@/components/common/ImageCropModal"
+import Image from 'next/image'
 
 interface OtayoriItem {
   id: string
@@ -190,9 +189,7 @@ export function ProfileTimeline() {
   // 日本時間に変換して表示
   const formatJapanTime = (isoString: string) => {
     const date = new Date(isoString)
-    // UTC時刻を日本時間（JST）に変換
-    const japanTime = new Date(date.getTime() + (9 * 60 * 60 * 1000))
-    return format(japanTime, "M/d HH:mm", { locale: ja })
+    return date.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })
   }
 
   // カスタム日時かどうかを判定（未来の日時で現在時刻との差が5分以上の場合を予約投稿とする）
@@ -345,9 +342,11 @@ export function ProfileTimeline() {
                       </div>
                     </div>
                   ) : (
-                    <img
+                    <Image
                       src={item.photo_url}
                       alt="おたより画像"
+                      width={128}
+                      height={128}
                       className="w-full h-32 object-cover rounded-lg"
                     />
                   )}

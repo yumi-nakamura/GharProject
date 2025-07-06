@@ -2,6 +2,7 @@
 import type { UserProfile } from "@/types/user"
 import { User, Heart, Calendar, Edit } from "lucide-react"
 import { useRouter } from "next/navigation"
+import Image from 'next/image'
 
 export function UserCard({ user }: { user: UserProfile }) {
   const router = useRouter()
@@ -13,10 +14,12 @@ export function UserCard({ user }: { user: UserProfile }) {
       <div className="text-center">
         {/* アバター画像 */}
         <div className="relative mx-auto mb-4">
-          {hasAvatar ? (
-            <img 
-              src={user.avatar_url} 
-              alt={user.name} 
+          {hasAvatar && !isBase64 ? (
+            <Image
+              src={user.avatar_url}
+              alt={user.name}
+              width={80}
+              height={80}
               className="w-20 h-20 rounded-full object-cover border-4 border-orange-200 shadow-lg"
               onError={(e) => {
                 // 画像読み込みエラー時のフォールバック

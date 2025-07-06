@@ -6,6 +6,7 @@ import { useAuth } from "@/components/layout/AuthProvider"
 import Link from "next/link"
 import { PawPrint, User } from "lucide-react"
 import { useRouter } from "next/navigation"
+import Image from 'next/image'
 
 const supabase = createClient()
 
@@ -88,9 +89,11 @@ export function Navbar() {
           <>
             <Link href="/profile" className="flex items-center space-x-2 hover:opacity-80 transition">
               {avatarUrl ? (
-                <img 
+                <Image 
                   src={avatarUrl} 
                   alt="アバター" 
+                  width={32}
+                  height={32}
                   className="w-8 h-8 rounded-full object-cover border-2 border-orange-200"
                 />
               ) : (

@@ -4,15 +4,17 @@ import { Camera, X, Loader2, Crop, Check, RotateCcw } from "lucide-react"
 import { prepareImageForUpload, createImagePreview, isHeicFile } from "@/utils/imageHelpers"
 import Cropper from 'react-easy-crop'
 import type { Area } from 'react-easy-crop'
+import Image from 'next/image'
 
 interface ImageUploaderProps {
   onSelect: (file: File) => void
   onPreview?: (url: string) => void
   className?: string
   onCropChange?: (isCropped: boolean) => void
+  onRemove?: () => void
 }
 
-export function ImageUploader({ onSelect, onPreview, onCropChange, className = "" }: ImageUploaderProps) {
+export function ImageUploader({ onSelect, onPreview, onCropChange, onRemove, className = "" }: ImageUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isConverting, setIsConverting] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -84,7 +86,7 @@ export function ImageUploader({ onSelect, onPreview, onCropChange, className = "
   // 画像のアスペクト比を取得する関数
   const getImageAspectRatio = (file: File): Promise<number> => {
     return new Promise((resolve) => {
-      const img = new Image()
+      const img = new window.Image()
       img.onload = () => {
         const aspectRatio = img.width / img.height
         resolve(aspectRatio)
@@ -109,6 +111,10 @@ export function ImageUploader({ onSelect, onPreview, onCropChange, className = "
     // ファイル入力の値もリセット
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
+    }
+    // 親への通知
+    if (typeof onRemove === 'function') {
+      onRemove();
     }
   }
 
@@ -151,7 +157,7 @@ export function ImageUploader({ onSelect, onPreview, onCropChange, className = "
   // 画像をトリミングする関数
   const getCroppedImg = (imageSrc: string, pixelCrop: Area, rotation = 0): Promise<string> => {
     return new Promise((resolve) => {
-      const image = new Image()
+      const image = new window.Image()
       image.src = imageSrc
       image.onload = () => {
         const canvas = document.createElement('canvas')
@@ -270,9 +276,11 @@ export function ImageUploader({ onSelect, onPreview, onCropChange, className = "
               maxHeight: '300px'
             }}
           >
-            <img
+            <Image
               src={previewUrl}
               alt="プレビュー"
+              width={400}
+              height={300}
               className="w-full h-full object-cover"
             />
           </div>

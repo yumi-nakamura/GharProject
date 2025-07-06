@@ -3,6 +3,7 @@
 
 import React, { useState, ChangeEvent } from "react"
 import { Lock, Eye, AlertCircle, MailSearch } from "lucide-react"
+import Image from 'next/image'
 
 export default function PoopImageGuard({
   imageUrl,
@@ -55,9 +56,11 @@ export default function PoopImageGuard({
           解除済み
         </div>
         {isValidImageUrl(imageUrl) ? (
-          <img
+          <Image
             src={imageUrl}
             alt="うんち写真"
+            width={400}
+            height={256}
             className="w-full max-h-64 object-contain rounded-lg border shadow-sm"
           />
         ) : (

@@ -6,6 +6,7 @@ import { DogListItem } from "@/components/settings/DogListItem"
 import Link from 'next/link'
 import { PlusCircle, User, Heart, PawPrint, Settings, Edit, ArrowRight, Star } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 
 import { DogProfile } from "@/types/dog"
 import { UserProfile } from "@/types/user"
@@ -132,9 +133,11 @@ export default function SettingsPage() {
             {/* アバター */}
             <div className="relative">
               {userProfile?.avatar_url ? (
-                <img
+                <Image
                   src={userProfile.avatar_url}
                   alt={userProfile.name}
+                  width={64}
+                  height={64}
                   className="w-16 h-16 rounded-full object-cover border-4 border-pink-200 shadow-md"
                 />
               ) : (

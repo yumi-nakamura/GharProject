@@ -36,14 +36,6 @@ export function OtayoriCard({ post, dog, isAnalyzed = false }: OtayoriCardProps)
   // 表示する日時を決定（カスタム日時があればそれを使用、なければ投稿日時）
   const displayDatetime = post.customDatetime || post.datetime
 
-  // 日本時間に変換して表示
-  const formatJapanTime = (isoString: string) => {
-    const date = new Date(isoString)
-    // UTC時刻を日本時間（JST）に変換
-    const japanTime = new Date(date.getTime() + (9 * 60 * 60 * 1000))
-    return japanTime.toLocaleString('ja-JP')
-  }
-
   // カスタム日時かどうかを判定（未来の日時で現在時刻との差が5分以上の場合を予約投稿とする）
   const isScheduledPost = () => {
     if (!post.customDatetime) return false
@@ -192,4 +184,9 @@ export function OtayoriCard({ post, dog, isAnalyzed = false }: OtayoriCardProps)
       )}
     </div>
   )
+}
+
+const formatJapanTime = (isoString: string) => {
+  const date = new Date(isoString)
+  return date.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })
 }

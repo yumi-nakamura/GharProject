@@ -6,6 +6,7 @@ import { TextInput } from "@/components/common/TextInput"
 import { Button } from "@/components/common/Button"
 import type { DogProfile } from '@/types/dog'
 import { PawPrint, Loader2 } from 'lucide-react'
+import Image from 'next/image'
 
 const supabase = createClient()
 
@@ -161,9 +162,11 @@ export default function DogForm({ initialDogData, onComplete }: DogFormProps) {
         ) : (
           <div onClick={handleImageClick} className="cursor-pointer group relative">
             {displayUrl ? (
-              <img
+              <Image
                 src={displayUrl}
                 alt="わんちゃんの写真"
+                width={128}
+                height={128}
                 className="rounded-full object-cover w-32 h-32 border-4 border-orange-200"
                 style={{ display: 'block' }} 
               />

@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react"
 import type { DogProfile } from "@/types/dog"
 import { createClient } from "@/utils/supabase/client"
 import { PawPrint, Loader2, Camera, Save } from "lucide-react"
+import Image from 'next/image'
 
 const supabase = createClient()
 
@@ -162,9 +163,11 @@ export default function DogProfileEditForm({ initialDogData, onComplete }: DogPr
         ) : (
           <div onClick={handleImageClick} className="cursor-pointer group relative">
             {displayUrl ? (
-              <img
+              <Image
                 src={displayUrl}
                 alt="わんちゃんの写真"
+                width={128}
+                height={128}
                 className="rounded-full object-cover w-32 h-32 border-4 border-orange-200 shadow-lg"
                 style={{ display: 'block' }}
               />

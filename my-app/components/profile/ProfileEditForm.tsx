@@ -8,6 +8,7 @@ import { TextArea } from "@/components/common/TextArea"
 import { Button } from "@/components/common/Button"
 import { User, Save, X, Camera } from "lucide-react"
 import { useAuth } from "@/components/layout/AuthProvider"
+import Image from 'next/image'
 
 interface ProfileEditFormProps {
   user: UserProfile
@@ -200,9 +201,11 @@ export function ProfileEditForm({ user, onSave }: ProfileEditFormProps) {
             {/* 現在の画像表示 */}
             {formData.avatar_url && (
               <div className="relative mx-auto w-24 h-24">
-                <img
+                <Image
                   src={formData.avatar_url}
                   alt="プロフィール画像"
+                  width={96}
+                  height={96}
                   className="w-full h-full rounded-full object-cover border-2 border-pink-200"
                 />
               </div>

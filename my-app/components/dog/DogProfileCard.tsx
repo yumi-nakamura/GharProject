@@ -1,6 +1,7 @@
 "use client"
 import type { DogProfile } from "@/types/dog"
 import { PawPrint, Heart, Calendar, Weight, Star, Shield, AlertTriangle, ThumbsUp, ThumbsDown, Edit } from "lucide-react"
+import Image from 'next/image'
 
 interface DogProfileCardProps {
   dog: DogProfile
@@ -55,18 +56,20 @@ export default function DogProfileCard({ dog, showEditButton = false, onEdit }: 
           <div className="flex flex-col items-center space-y-4">
             {/* プロフィール画像 */}
             <div className="relative">
-                             {hasImage ? (
-                 <img
-                   src={dog.image_url!}
-                   alt={`${dog.name}の写真`}
-                   className="w-32 h-32 rounded-full object-cover border-4 border-orange-200 shadow-lg"
-                   onError={(e) => {
-                     const target = e.target as HTMLImageElement
-                     target.style.display = 'none'
-                     target.nextElementSibling?.classList.remove('hidden')
-                   }}
-                 />
-               ) : null}
+              {hasImage ? (
+                <Image
+                  src={dog.image_url!}
+                  alt={`${dog.name}の写真`}
+                  width={128}
+                  height={128}
+                  className="w-32 h-32 rounded-full object-cover border-4 border-orange-200 shadow-lg"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement
+                    target.style.display = 'none'
+                    target.nextElementSibling?.classList.remove('hidden')
+                  }}
+                />
+              ) : null}
               {!hasImage && (
                 <div className="w-32 h-32 rounded-full bg-gradient-to-br from-orange-100 to-pink-100 border-4 border-orange-200 shadow-lg flex items-center justify-center">
                   <PawPrint size={48} className="text-orange-300" />

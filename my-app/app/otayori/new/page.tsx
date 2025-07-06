@@ -114,26 +114,20 @@ export default function OtayoriNewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
-      <div className="container mx-auto px-4 py-6">
-        <div className="max-w-2xl mx-auto">
-          {/* ヘッダー */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-800 mb-2">新しいおたより</h1>
-            <p className="text-gray-600">愛犬との大切な瞬間を記録しましょう</p>
-          </div>
-
-          {/* おたより投稿フォーム */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-pink-100">
-            <EntryForm />
-          </div>
-
-          {/* 戻るリンク */}
-          <div className="text-center mt-6">
-            <Link href="/" className="text-pink-600 hover:text-pink-700 font-semibold">
-              ← ホームに戻る
-            </Link>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 py-6">
+      <div className="max-w-md mx-auto px-2">
+        {/* ヘッダー */}
+        <div className="text-center mb-6">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">新しいおたより</h1>
+          <p className="text-gray-600 text-sm sm:text-base">愛犬との大切な瞬間を記録しましょう</p>
+        </div>
+        {/* おたより投稿フォーム */}
+        <EntryForm dogs={dogs} />
+        {/* 戻るリンク */}
+        <div className="text-center mt-6">
+          <Link href="/" className="text-pink-600 hover:text-pink-700 font-semibold">
+            ← ホームに戻る
+          </Link>
         </div>
       </div>
     </div>
