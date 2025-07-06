@@ -26,12 +26,25 @@ export function ImageUploader({ onSelect, onPreview, onCropChange, className = "
 
   const handleFileSelect = async (file: File) => {
     try {
+      // ファイルサイズチェック（10MB以下）
+      if (file.size > 10 * 1024 * 1024) {
+        alert('ファイルサイズが大きすぎます。10MB以下の画像を選択してください。')
+        return
+      }
+
       setIsConverting(true)
       
       // クライアントサイドでのみ画像処理を実行
       if (typeof window !== 'undefined') {
         // HEICファイルの場合は変換
         const preparedFile = await prepareImageForUpload(file)
+        
+        // 処理後のファイルサイズチェック（5MB以下）
+        if (preparedFile.size > 5 * 1024 * 1024) {
+          alert('画像の処理に失敗しました。別の画像をお試しください。')
+          setIsConverting(false)
+          return
+        }
         
         // 元画像のURLを作成（トリミング用）
         const originalUrl = URL.createObjectURL(file)
@@ -62,8 +75,7 @@ export function ImageUploader({ onSelect, onPreview, onCropChange, className = "
       }
     } catch (error) {
       console.error('画像処理エラー:', error)
-      // エラーの場合は元のファイルを使用
-      onSelect(file)
+      alert('画像の処理中にエラーが発生しました。別の画像をお試しください。')
     } finally {
       setIsConverting(false)
     }
@@ -308,6 +320,9 @@ export function ImageUploader({ onSelect, onPreview, onCropChange, className = "
             </div>
             <div className="text-xs text-gray-400">
               HEIC形式も対応しています
+            </div>
+            <div className="text-xs text-gray-400">
+              最大10MBまで（自動で1024x1024以下にリサイズ）
             </div>
           </div>
         )}

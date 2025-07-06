@@ -60,9 +60,9 @@ export default function OtayoriEntryForm() {
         const response = await fetch(photoPreview)
         const blob = await response.blob()
         
-        // ファイルサイズチェック（5MB以下）
-        if (blob.size > 5 * 1024 * 1024) {
-          throw new Error('画像サイズが大きすぎます。5MB以下の画像を選択してください。')
+        // ファイルサイズチェック（2MB以下に制限）
+        if (blob.size > 2 * 1024 * 1024) {
+          throw new Error('画像サイズが大きすぎます。画像を小さくしてから再度お試しください。')
         }
         
         imageBase64 = await new Promise((resolve, reject) => {
@@ -114,7 +114,20 @@ export default function OtayoriEntryForm() {
       }
     } catch (error) {
       console.error('コメント生成エラー:', error)
-      const errorMessage = error instanceof Error ? error.message : 'コメントの生成に失敗しました'
+      let errorMessage = 'コメントの生成に失敗しました'
+      
+      if (error instanceof Error) {
+        if (error.message.includes('pattern')) {
+          errorMessage = '画像の形式に問題があります。別の画像をお試しください。'
+        } else if (error.message.includes('size')) {
+          errorMessage = error.message
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMessage = 'ネットワークエラーが発生しました。インターネット接続を確認してから再度お試しください。'
+        } else {
+          errorMessage = `エラー: ${error.message}`
+        }
+      }
+      
       alert(`コメント生成エラー: ${errorMessage}`)
     } finally {
       setGeneratingComment(false)

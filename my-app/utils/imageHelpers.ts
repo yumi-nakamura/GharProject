@@ -47,27 +47,105 @@ export const isHeicFile = (file: File): boolean => {
 }
 
 /**
+ * 画像をリサイズする
+ * @param file - 元の画像ファイル
+ * @param maxWidth - 最大幅（デフォルト: 1024）
+ * @param maxHeight - 最大高さ（デフォルト: 1024）
+ * @param quality - JPEG品質（デフォルト: 0.8）
+ * @returns リサイズ後のBlob
+ */
+export const resizeImage = async (
+  file: File, 
+  maxWidth: number = 1024, 
+  maxHeight: number = 1024, 
+  quality: number = 0.8
+): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    if (typeof window === 'undefined') {
+      resolve(file)
+      return
+    }
+
+    const img = new Image()
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+
+    if (!ctx) {
+      reject(new Error('Canvas context not available'))
+      return
+    }
+
+    img.onload = () => {
+      try {
+        // アスペクト比を保持してリサイズ
+        let { width, height } = img
+        
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height)
+          width = Math.round(width * ratio)
+          height = Math.round(height * ratio)
+        }
+
+        // Canvasサイズを設定
+        canvas.width = width
+        canvas.height = height
+
+        // 画像を描画
+        ctx.drawImage(img, 0, 0, width, height)
+
+        // JPEGとしてBlobに変換
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob)
+            } else {
+              reject(new Error('Failed to create blob'))
+            }
+          },
+          'image/jpeg',
+          quality
+        )
+      } catch (error) {
+        reject(error)
+      }
+    }
+
+    img.onerror = () => {
+      reject(new Error('Failed to load image'))
+    }
+
+    img.src = URL.createObjectURL(file)
+  })
+}
+
+/**
  * 画像ファイルを適切な形式に変換してアップロード用に準備
  * @param file - 元のファイル
  * @returns 変換後のファイル
  */
 export const prepareImageForUpload = async (file: File): Promise<File> => {
   try {
+    let processedBlob: Blob = file
+
     // HEICファイルの場合は変換（クライアントサイドでのみ）
     if (isHeicFile(file) && typeof window !== 'undefined') {
-      const convertedBlob = await convertHeicToJpeg(file)
-      
-      // BlobをFileオブジェクトに変換
-      const convertedFile = new File([convertedBlob], 
-        file.name.replace(/\.(heic|heif)$/i, '.jpg'), 
-        { type: 'image/jpeg' }
-      )
-      
-      return convertedFile
+      processedBlob = await convertHeicToJpeg(file)
     }
+
+    // 画像をリサイズ（クライアントサイドでのみ）
+    if (typeof window !== 'undefined') {
+      processedBlob = await resizeImage(processedBlob as File)
+    }
+
+    // BlobをFileオブジェクトに変換
+    const fileName = file.name.replace(/\.(heic|heif)$/i, '.jpg')
+    const processedFile = new File([processedBlob], fileName, { 
+      type: 'image/jpeg' 
+    })
+
+    console.log(`画像処理完了: ${file.size} bytes → ${processedFile.size} bytes`)
     
-    // その他の画像形式はそのまま返す
-    return file
+    return processedFile
   } catch (error) {
     console.error('画像準備エラー:', error)
     return file
