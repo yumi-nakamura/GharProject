@@ -25,9 +25,7 @@ export default function OtayoriEntryForm() {
   const [customDatetime, setCustomDatetime] = useState<string>(() => {
     // 現在の日本時間をUTC形式で設定
     const now = new Date()
-    // 日本時間をUTCに変換（9時間を引く）
-    const utcTime = new Date(now.getTime() - (9 * 60 * 60 * 1000))
-    return utcTime.toISOString()
+    return now.toISOString()
   })
   const [generatingComment, setGeneratingComment] = useState(false)
 
@@ -452,13 +450,12 @@ export default function OtayoriEntryForm() {
                 <label className="block text-sm text-gray-600 mb-1">日付</label>
                 <input
                   type="date"
-                  value={new Date(customDatetime).toISOString().split('T')[0]}
+                  value={new Date(customDatetime).toLocaleDateString('sv-SE')}
                   onChange={(e) => {
                     const newDate = e.target.value
-                    const currentTime = new Date(customDatetime).toTimeString().split(' ')[0].slice(0, 5)
-                    const japanDateTimeString = `${newDate}T${currentTime}:00+09:00`
-                    const utcDateTime = new Date(japanDateTimeString)
-                    setCustomDatetime(utcDateTime.toISOString())
+                    const currentDateTime = new Date(customDatetime)
+                    const newDateTime = new Date(`${newDate}T${currentDateTime.toTimeString().slice(0, 8)}`)
+                    setCustomDatetime(newDateTime.toISOString())
                   }}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent min-h-[44px] text-base"
                 />
@@ -467,13 +464,13 @@ export default function OtayoriEntryForm() {
                 <label className="block text-sm text-gray-600 mb-1">時刻</label>
                 <input
                   type="time"
-                  value={new Date(new Date(customDatetime).getTime() + (9 * 60 * 60 * 1000)).toTimeString().split(' ')[0].slice(0, 5)}
+                  value={new Date(customDatetime).toTimeString().slice(0, 5)}
                   onChange={(e) => {
                     const newTime = e.target.value
-                    const currentDate = new Date(customDatetime).toISOString().split('T')[0]
-                    const japanDateTimeString = `${currentDate}T${newTime}:00+09:00`
-                    const utcDateTime = new Date(japanDateTimeString)
-                    setCustomDatetime(utcDateTime.toISOString())
+                    const currentDateTime = new Date(customDatetime)
+                    const currentDate = currentDateTime.toISOString().split('T')[0]
+                    const newDateTime = new Date(`${currentDate}T${newTime}:00`)
+                    setCustomDatetime(newDateTime.toISOString())
                   }}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent min-h-[44px] text-base"
                 />

@@ -94,6 +94,10 @@ export function ImageUploader({ onSelect, onPreview, onCropChange, className = "
       setOriginalImageUrl(null)
       onCropChange?.(false)
     }
+    // ファイル入力の値もリセット
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   // トリミング開始
@@ -315,6 +319,8 @@ export function ImageUploader({ onSelect, onPreview, onCropChange, className = "
           onChange={(e) => {
             if (e.target.files && e.target.files.length > 0) {
               handleFileSelect(e.target.files[0])
+              // 同じファイルを再選択できるように値をリセット
+              e.target.value = ''
             }
           }}
           className="hidden"
