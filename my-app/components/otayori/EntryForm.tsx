@@ -8,6 +8,7 @@ import type { DogProfile } from '@/types/dog'
 import TagSelector from '@/components/common/TagSelector'
 import { ImageUploader } from '@/components/common/ImageUploader'
 import Image from 'next/image'
+import { optimizeImageForAI } from '@/utils/imageHelpers'
 
 const supabase = createClient()
 
@@ -61,11 +62,6 @@ export default function EntryForm({ dogs }: Props) {
         const response = await fetch(photoPreview)
         const blob = await response.blob()
         
-        // ファイルサイズチェック（2MB以下に制限）
-        if (blob.size > 2 * 1024 * 1024) {
-          throw new Error('画像サイズが大きすぎます。画像を小さくしてから再度お試しください。')
-        }
-        
         imageBase64 = await new Promise((resolve, reject) => {
           const reader = new FileReader()
           reader.onload = () => {
@@ -83,6 +79,11 @@ export default function EntryForm({ dogs }: Props) {
       } else {
         imageBase64 = photoPreview
       }
+
+      // 画像をAI用に最適化（1MB以下にリサイズ）
+      console.log('画像最適化中...')
+      const optimizedImage = await optimizeImageForAI(imageBase64, 1)
+      console.log('画像最適化完了')
       
       const response = await fetch('/api/generate-comment', {
         method: 'POST',
@@ -90,7 +91,7 @@ export default function EntryForm({ dogs }: Props) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          imageUrl: imageBase64,
+          imageUrl: optimizedImage,
           type: type,
           dogName: selectedDog.name
         })
@@ -121,9 +122,11 @@ export default function EntryForm({ dogs }: Props) {
         if (error.message.includes('pattern')) {
           errorMessage = '画像の形式に問題があります。別の画像をお試しください。'
         } else if (error.message.includes('size')) {
-          errorMessage = error.message
+          errorMessage = '画像サイズが大きすぎます。画像を小さくしてから再度お試しください。'
         } else if (error.message.includes('network') || error.message.includes('fetch')) {
           errorMessage = 'ネットワークエラーが発生しました。インターネット接続を確認してから再度お試しください。'
+        } else if (error.message.includes('最適化')) {
+          errorMessage = '画像の処理に失敗しました。別の画像をお試しください。'
         } else {
           errorMessage = `エラー: ${error.message}`
         }

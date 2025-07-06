@@ -177,4 +177,119 @@ export const createImagePreview = async (file: File): Promise<string> => {
     // エラーの場合は元のファイルでプレビュー生成
     return typeof window !== 'undefined' ? URL.createObjectURL(file) : ''
   }
+}
+
+/**
+ * 画像をリサイズしてBase64形式で返す（AI用）
+ * @param imageSrc - 画像のソース（URL、Base64、Blob）
+ * @param maxWidth - 最大幅（デフォルト: 800px）
+ * @param maxHeight - 最大高さ（デフォルト: 800px）
+ * @param quality - 品質（0.1-1.0、デフォルト: 0.8）
+ * @returns Promise<string> - リサイズされた画像のBase64文字列
+ */
+export const resizeImageForAI = async (
+  imageSrc: string,
+  maxWidth: number = 800,
+  maxHeight: number = 800,
+  quality: number = 0.8
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image()
+    img.crossOrigin = 'anonymous'
+    
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        
+        if (!ctx) {
+          reject(new Error('Canvas context could not be created'))
+          return
+        }
+
+        // アスペクト比を保ちながらリサイズ
+        let { width, height } = img
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width
+          width = maxWidth
+        }
+        if (height > maxHeight) {
+          width = (width * maxHeight) / height
+          height = maxHeight
+        }
+
+        canvas.width = width
+        canvas.height = height
+
+        // 画像を描画
+        ctx.drawImage(img, 0, 0, width, height)
+
+        // JPEG形式でBase64に変換
+        const resizedBase64 = canvas.toDataURL('image/jpeg', quality)
+        resolve(resizedBase64)
+      } catch (error) {
+        reject(error)
+      }
+    }
+
+    img.onerror = () => {
+      reject(new Error('Failed to load image'))
+    }
+
+    img.src = imageSrc
+  })
+}
+
+/**
+ * Base64画像のサイズをチェックし、必要に応じてリサイズする
+ * @param imageBase64 - Base64形式の画像
+ * @param maxSizeMB - 最大サイズ（MB、デフォルト: 1MB）
+ * @returns Promise<string> - 最適化された画像のBase64文字列
+ */
+export const optimizeImageForAI = async (
+  imageBase64: string,
+  maxSizeMB: number = 1
+): Promise<string> => {
+  const maxSizeBytes = maxSizeMB * 1024 * 1024
+  
+  // Base64文字列のサイズをチェック
+  const base64Size = Math.ceil((imageBase64.length * 3) / 4)
+  
+  if (base64Size <= maxSizeBytes) {
+    return imageBase64
+  }
+
+  // サイズが大きい場合はリサイズ
+  console.log(`画像サイズが大きすぎます（${(base64Size / 1024 / 1024).toFixed(2)}MB）。リサイズ中...`)
+  
+  let quality = 0.8
+  let resizedImage = imageBase64
+  
+  // 品質を下げながらリサイズを試行
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      resizedImage = await resizeImageForAI(imageBase64, 800, 800, quality)
+      const resizedSize = Math.ceil((resizedImage.length * 3) / 4)
+      
+      if (resizedSize <= maxSizeBytes) {
+        console.log(`リサイズ完了: ${(resizedSize / 1024 / 1024).toFixed(2)}MB`)
+        return resizedImage
+      }
+      
+      quality -= 0.2 // 品質を下げて再試行
+    } catch (error) {
+      console.error('リサイズエラー:', error)
+      break
+    }
+  }
+  
+  // 最後の手段としてさらに小さくリサイズ
+  try {
+    const finalResized = await resizeImageForAI(imageBase64, 600, 600, 0.6)
+    console.log('最終リサイズ完了')
+    return finalResized
+  } catch (error) {
+    console.error('最終リサイズエラー:', error)
+    throw new Error('画像の最適化に失敗しました')
+  }
 } 
