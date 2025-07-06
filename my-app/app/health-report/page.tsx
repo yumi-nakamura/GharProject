@@ -13,7 +13,6 @@ import {
   Target,
   Award,
   Eye,
-  EyeOff,
   Brain,
   Bone,
   Bubbles,
@@ -72,9 +71,11 @@ export default function HealthReportPage() {
   const [selectedAnalysisType, setSelectedAnalysisType] = useState<'poop' | 'meal' | 'emotion'>('meal')
   const [recentPosts, setRecentPosts] = useState<OtayoriPost[]>([])
   const [analysisHistory, setAnalysisHistory] = useState<DogImageAnalysisWithOtayori[]>([])
-  const [hiddenPoopImages, setHiddenPoopImages] = useState<Set<string>>(new Set())
   const [selectedOtayoriId, setSelectedOtayoriId] = useState<string | undefined>(undefined)
   const [deletedAnalysisOtayoriIds, setDeletedAnalysisOtayoriIds] = useState<Set<string>>(new Set())
+  const [showImageModal, setShowImageModal] = useState(false)
+  const [modalImageUrl, setModalImageUrl] = useState<string>('')
+  const [modalImageAlt, setModalImageAlt] = useState<string>('')
 
   const fetchRecentPosts = useCallback(async (dogId: string) => {
     try {
@@ -152,7 +153,8 @@ export default function HealthReportPage() {
             type,
             datetime,
             content,
-            photo_url
+            photo_url,
+            dog_id
           )
         `)
         .in('otayori_id', otayoriIds)
@@ -180,6 +182,20 @@ export default function HealthReportPage() {
       await fetchAnalysisHistory(selectedDog.id)
     }
   }, [selectedDog, fetchAnalysisHistory])
+
+  // 画像モーダルを開く関数
+  const openImageModal = useCallback((imageUrl: string, analysisType: string) => {
+    setModalImageUrl(imageUrl)
+    setModalImageAlt(`${analysisType} analysis image`)
+    setShowImageModal(true)
+  }, [])
+
+  // 画像モーダルを閉じる関数
+  const closeImageModal = useCallback(() => {
+    setShowImageModal(false)
+    setModalImageUrl('')
+    setModalImageAlt('')
+  }, [])
 
   // 分析結果を削除する関数
   const deleteAnalysis = useCallback(async (analysisId: string) => {
@@ -714,53 +730,38 @@ export default function HealthReportPage() {
                         <div className="flex flex-col md:flex-row gap-4 items-start">
                           {/* 画像＋詳細情報 横並び */}
                           <div className="relative flex-shrink-0">
-                            {/* うんち画像はデフォルトで隠す */}
-                            {analysis.analysis_type === 'poop' && hiddenPoopImages.has(analysis.id) ? (
-                              <div className="w-28 h-28 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center relative">
-                                <Eye className="text-green-400 w-10 h-10 mb-2" />
-                                <button
-                                  onClick={() => {
-                                    const newHidden = new Set(hiddenPoopImages)
-                                    newHidden.delete(analysis.id)
-                                    setHiddenPoopImages(newHidden)
+                            <div className="relative">
+                              {imageUrl && (
+                                <Image
+                                  src={imageUrl}
+                                  alt={`${analysis.analysis_type} analysis image`}
+                                  width={112}
+                                  height={112}
+                                  className="w-28 h-28 object-cover rounded-lg border"
+                                  style={{ background: "#eee", display: "block" }}
+                                  onError={() => {
+                                    // Next.js ImageコンポーネントではonErrorは使用できないため、
+                                    // エラーハンドリングは別途実装が必要
                                   }}
-                                  className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold shadow hover:bg-green-200 transition absolute bottom-3 left-1/2 -translate-x-1/2"
-                                >
-                                  画像を表示
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="relative">
-                                {imageUrl && (
-                                  <Image
-                                    src={imageUrl}
-                                    alt={`${analysis.analysis_type} analysis image`}
-                                    width={112}
-                                    height={112}
-                                    className="w-28 h-28 object-cover rounded-lg border"
-                                    style={{ background: "#eee", display: "block" }}
-                                    onError={() => {
-                                      // Next.js ImageコンポーネントではonErrorは使用できないため、
-                                      // エラーハンドリングは別途実装が必要
-                                    }}
-                                  />
-                                )}
-                                {analysis.analysis_type === 'poop' && (
-                                  <button
-                                    onClick={() => {
-                                      const newHidden = new Set(hiddenPoopImages)
-                                      newHidden.add(analysis.id)
-                                      setHiddenPoopImages(newHidden)
-                                    }}
-                                    className="absolute inset-0 flex flex-col items-center justify-center bg-white/70 rounded-lg"
-                                    style={{ zIndex: 2 }}
-                                  >
-                                    <EyeOff className="text-green-400 w-10 h-10 mb-2" />
-                                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold shadow hover:bg-green-200 transition">画像を隠す</span>
-                                  </button>
-                                )}
-                              </div>
-                            )}
+                                />
+                              )}
+                              
+                              {/* うんち画像の時はBubbleアイコンで大きく隠す */}
+                              {analysis.analysis_type === 'poop' && (
+                                <div className="absolute inset-0 bg-gradient-to-br from-orange-100/90 via-pink-50/90 to-yellow-50/90 rounded-lg flex flex-col items-center justify-center">
+                                  <Bubbles className="text-white/80 w-20 h-20" strokeWidth={1.5} />
+                                </div>
+                              )}
+                              
+                              {/* 画像確認ボタン（写真に重ならない位置に配置） */}
+                              <button
+                                onClick={() => openImageModal(imageUrl, analysis.analysis_type)}
+                                className="absolute -top-2 -right-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 shadow-lg transition-colors z-10"
+                                title="画像を確認する"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
                           {/* 詳細情報 */}
                           <div className="flex-1 min-w-0">
@@ -838,17 +839,12 @@ export default function HealthReportPage() {
                               <span className="text-sm font-medium text-gray-700">観察結果</span>
                             </div>
                             <div className="space-y-1">
-                              {analysis.observations.slice(0, 2).map((observation: string, index: number) => (
+                              {analysis.observations.map((observation: string, index: number) => (
                                 <div key={index} className="text-sm text-gray-600 flex items-start gap-2">
                                   <span className="text-green-400 mt-1">•</span>
                                   <span>{observation}</span>
                                 </div>
                               ))}
-                              {analysis.observations.length > 2 && (
-                                <div className="text-xs text-gray-400 italic">
-                                  他 {analysis.observations.length - 2} 件の観察結果があります
-                                </div>
-                              )}
                             </div>
                           </div>
                         )}
@@ -919,6 +915,7 @@ export default function HealthReportPage() {
                           <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
                             <div className="flex items-center gap-1">
                               <span className="text-pink-400">📝</span>
+                              <span className="text-gray-400 mr-1">{selectedDog?.name}</span>
                               <span>記録日: {analysis.otayori?.datetime ? new Date(analysis.otayori.datetime).toLocaleDateString('ja-JP', { 
                                 year: 'numeric', 
                                 month: 'short', 
@@ -1108,6 +1105,43 @@ export default function HealthReportPage() {
                 // ここでは何もしない（重複を防ぐため）
               }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* 画像確認モーダル */}
+      {showImageModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800">画像確認</h3>
+              <button
+                onClick={closeImageModal}
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex justify-center">
+              <div className="relative">
+                <Image
+                  src={modalImageUrl}
+                  alt={modalImageAlt}
+                  width={800}
+                  height={600}
+                  className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
+                  style={{ background: "#f8f9fa" }}
+                />
+              </div>
+            </div>
+            <div className="mt-4 text-center">
+              <button
+                onClick={closeImageModal}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+              >
+                閉じる
+              </button>
+            </div>
           </div>
         </div>
       )}

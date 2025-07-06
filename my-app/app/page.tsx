@@ -174,16 +174,16 @@ function LandingPage() {
             <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
               愛犬との大切な毎日を、もっと楽しく、もっと深く記録しよう
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/signup" className="group">
-                <button className="bg-gradient-to-r from-pink-500 to-orange-500 text-white px-8 py-4 rounded-full text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-md mx-auto text-center">
+              <Link href="/signup" className="group w-full sm:w-auto">
+                <button className="w-full sm:w-auto bg-gradient-to-r from-pink-500 to-orange-500 text-white px-8 py-4 rounded-full text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2">
                   <Plus size={20} />
                   無料で始める
                   <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
                 </button>
               </Link>
-              <Link href="/login">
-                <button className="bg-white/80 backdrop-blur-sm text-gray-700 px-8 py-4 rounded-full text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 border border-gray-200">
+              <Link href="/login" className="w-full sm:w-auto">
+                <button className="w-full sm:w-auto bg-white/80 backdrop-blur-sm text-gray-700 px-8 py-4 rounded-full text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 border border-gray-200">
                   ログイン
                 </button>
               </Link>
@@ -604,7 +604,7 @@ function Dashboard({ communityPosts }: { communityPosts: CommunityPost[] }) {
               </div>
               
               {/* 可愛いメッセージを追加 */}
-              <div className="text-center mb-4 p-3 bg-gradient-to-r from-orange-50 to-pink-50 rounded-lg border border-orange-100">
+              <div className="text-center mb-4 p-3 bg-gradient-to-br from-orange-100 via-pink-50 to-yellow-50 rounded-lg border border-orange-100 shadow-sm">
                 <p className="text-sm text-gray-700 font-medium">
                   {dogStats && dogStats.todayPosts > 0 
                     ? `今日は${dogStats.todayPosts}回も記録できました！素晴らしいです！✨` 
