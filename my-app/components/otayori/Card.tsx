@@ -11,9 +11,10 @@ interface OtayoriCardProps {
   post: OtayoriRecord
   dog: DogProfile | null
   isAnalyzed?: boolean // 分析済みかどうかのフラグ
+  onAnalysisComplete?: () => void // 分析完了時のコールバック
 }
 
-export function OtayoriCard({ post, dog, isAnalyzed = false }: OtayoriCardProps) {
+export function OtayoriCard({ post, dog, isAnalyzed = false, onAnalysisComplete }: OtayoriCardProps) {
   const [showAIAnalysis, setShowAIAnalysis] = useState(false)
   
   // プープバッグのパスワードを決定
@@ -175,8 +176,18 @@ export function OtayoriCard({ post, dog, isAnalyzed = false }: OtayoriCardProps)
               imageUrl={post.photo_url || ''}
               analysisType={post.type}
               otayoriId={post.id}
-              onAnalysisComplete={() => {
+              isHealthReportPage={false}
+              onSaveComplete={async (analysisId: string) => {
+                // モーダルを閉じる
                 setShowAIAnalysis(false)
+                
+                // データをリフレッシュ
+                if (onAnalysisComplete) {
+                  onAnalysisComplete()
+                }
+                
+                // 成功メッセージを表示（オプション）
+                console.log('分析結果が健康レポートに保存されました:', analysisId)
               }}
             />
           </div>

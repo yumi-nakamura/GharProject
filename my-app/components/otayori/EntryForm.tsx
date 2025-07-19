@@ -12,11 +12,14 @@ import { optimizeImageForAI } from '@/utils/imageHelpers'
 
 const supabase = createClient()
 
-type Props = { dogs: DogProfile[] }
-export default function EntryForm({ dogs }: Props) {
+type Props = { 
+  dogs: DogProfile[]
+  initialType?: 'meal' | 'poop' | 'emotion' | null
+}
+export default function EntryForm({ dogs, initialType = null }: Props) {
   const router = useRouter()
   const [selectedDogIndex, setSelectedDogIndex] = useState(0)
-  const [type, setType] = useState<'meal' | 'poop' | 'emotion' | null>(null)
+  const [type, setType] = useState<'meal' | 'poop' | 'emotion' | null>(initialType)
   const [content, setContent] = useState('')
   const [photo, setPhoto] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
@@ -93,7 +96,8 @@ export default function EntryForm({ dogs }: Props) {
         body: JSON.stringify({
           imageUrl: optimizedImage,
           type: type,
-          dogName: selectedDog.name
+          dogName: selectedDog.name,
+          tags: selectedTags
         })
       })
 
@@ -373,7 +377,7 @@ export default function EntryForm({ dogs }: Props) {
         <div className="bg-white p-3 sm:p-4 rounded-xl shadow">
           <div className="flex items-center justify-between mb-2">
             <label htmlFor="content" className="font-semibold text-base text-gray-700">コメント</label>
-            {photoPreview && type && (
+            {photoPreview && type && type !== 'poop' && (
               <button
                 type="button"
                 onClick={generateComment}

@@ -1,6 +1,6 @@
 "use client"
 // otayori/DogTimeline.tsx
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { createClient } from "@/utils/supabase/client"
 import { OtayoriCard } from "./Card"
 import type { OtayoriRecord } from "@/types/otayori"
@@ -31,73 +31,74 @@ export function DogTimeline({ dogs }: { dogs: DogProfile[] }) {
   const [analyzedOtayoriIds, setAnalyzedOtayoriIds] = useState<Set<string>>(new Set())
   const router = useRouter()
 
-  useEffect(() => {
+  // データを再取得する関数
+  const refreshData = useCallback(async () => {
     setLoading(true)
     setError(null)
     
-    const fetchPosts = async () => {
-      try {
-        console.log('DogTimeline: データ取得開始', { dogs, dogIds: dogs.map(d => d.id) })
-        
-        // 認証状態を確認
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) {
-          console.log('DogTimeline: ユーザー未認証')
-          router.push('/login')
-          return
-        }
-
-        console.log('DogTimeline: ユーザー認証済み', { userId: user.id })
-
-        // 複数の犬のIDでOTAYORIを取得
-        const dogIds = dogs.map(dog => dog.id)
-        const { data, error } = await supabase
-          .from("otayori")
-          .select("*")
-          .in("dog_id", dogIds)
-          .order("datetime", { ascending: false })
-
-        console.log('DogTimeline: クエリ結果', { data, error, count: data?.length })
-
-        if (error) {
-          console.error('OTAYORI取得エラー:', error)
-          setError('データの取得に失敗しました')
-          setLoading(false)
-          return
-        }
-        
-        const posts = (data || []).map((item: Record<string, unknown>) => ({
-          id: String(item.id),
-          dogId: String(item.dog_id),
-          userId: String(item.user_id),
-          type: String(item.type) as 'meal' | 'poop' | 'emotion',
-          content: String(item.content),
-          datetime: String(item.datetime),
-          photo_url: item.photo_url && String(item.photo_url).trim() !== '' ? String(item.photo_url) : undefined,
-          mood: item.mood ? String(item.mood) : undefined,
-          tags: Array.isArray(item.tags) ? item.tags as string[] : undefined,
-          customDatetime: item.custom_datetime ? String(item.custom_datetime) : undefined,
-          poopGuardPassword: item.poop_guard_password ? String(item.poop_guard_password) : undefined,
-          isPoopGuarded: typeof item.is_poop_guarded === 'boolean' ? item.is_poop_guarded as boolean : undefined,
-        }))
-        
-        console.log('DogTimeline: 処理済みデータ', { posts, count: posts.length })
-        
-        setPosts(posts)
-        
-        // 分析済みのotayori_idを取得
-        await fetchAnalyzedOtayoriIds(posts.map(p => p.id))
-        
-        setLoading(false)
-      } catch (err) {
-        console.error('予期しないエラー:', err)
-        setError('予期しないエラーが発生しました')
-        setLoading(false)
+    try {
+      console.log('DogTimeline: データ再取得開始', { dogs, dogIds: dogs.map(d => d.id) })
+      
+      // 認証状態を確認
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        console.log('DogTimeline: ユーザー未認証')
+        router.push('/login')
+        return
       }
-    }
 
-    fetchPosts()
+      console.log('DogTimeline: ユーザー認証済み', { userId: user.id })
+
+      // 複数の犬のIDでOTAYORIを取得
+      const dogIds = dogs.map(dog => dog.id)
+      const { data, error } = await supabase
+        .from("otayori")
+        .select("*")
+        .in("dog_id", dogIds)
+        .order("datetime", { ascending: false })
+
+      console.log('DogTimeline: クエリ結果', { data, error, count: data?.length })
+
+      if (error) {
+        console.error('OTAYORI取得エラー:', error)
+        setError('データの取得に失敗しました')
+        setLoading(false)
+        return
+      }
+      
+      const posts = (data || []).map((item: Record<string, unknown>) => ({
+        id: String(item.id),
+        dogId: String(item.dog_id),
+        userId: String(item.user_id),
+        type: String(item.type) as 'meal' | 'poop' | 'emotion',
+        content: String(item.content),
+        datetime: String(item.datetime),
+        photo_url: item.photo_url && String(item.photo_url).trim() !== '' ? String(item.photo_url) : undefined,
+        mood: item.mood ? String(item.mood) : undefined,
+        tags: Array.isArray(item.tags) ? item.tags as string[] : undefined,
+        customDatetime: item.custom_datetime ? String(item.custom_datetime) : undefined,
+        poopGuardPassword: item.poop_guard_password ? String(item.poop_guard_password) : undefined,
+        isPoopGuarded: typeof item.is_poop_guarded === 'boolean' ? item.is_poop_guarded as boolean : undefined,
+      }))
+      
+      console.log('DogTimeline: 処理済みデータ', { posts, count: posts.length })
+      
+      setPosts(posts)
+      
+      // 分析済みのotayori_idを取得
+      await fetchAnalyzedOtayoriIds(posts.map(p => p.id))
+      
+      setLoading(false)
+    } catch (err) {
+      console.error('予期しないエラー:', err)
+      setError('予期しないエラーが発生しました')
+      setLoading(false)
+    }
   }, [dogs, router])
+
+  useEffect(() => {
+    refreshData()
+  }, [dogs, router, refreshData])
 
   // 分析済みのotayori_idを取得する関数
   const fetchAnalyzedOtayoriIds = async (otayoriIds: string[]) => {
@@ -181,6 +182,7 @@ export function DogTimeline({ dogs }: { dogs: DogProfile[] }) {
                   post={post} 
                   dog={dog || null} 
                   isAnalyzed={isAnalyzed}
+                  onAnalysisComplete={refreshData}
                 />
               )
             })}

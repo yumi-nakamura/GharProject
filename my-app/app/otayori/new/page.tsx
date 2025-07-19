@@ -1,16 +1,21 @@
 "use client"
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/client'
 import { useAuth } from '@/components/layout/AuthProvider'
 import EntryForm from '@/components/otayori/EntryForm'
 import type { DogProfile } from '@/types/dog'
+import { useSearchParams } from 'next/navigation'
 
-
-export default function OtayoriNewPage() {
+// useSearchParamsを使用するコンポーネント
+function OtayoriNewContent() {
   const { user: authUser, loading: authLoading, initialized } = useAuth()
   const [dogs, setDogs] = useState<DogProfile[]>([])
   const [loading, setLoading] = useState(true)
+  const searchParams = useSearchParams()
+  
+  // URLパラメータから初期タイプを取得
+  const initialType = searchParams.get('type') as 'meal' | 'poop' | 'emotion' | null
 
   // 認証が初期化されたら犬の情報を取得
   useEffect(() => {
@@ -122,7 +127,7 @@ export default function OtayoriNewPage() {
           <p className="text-gray-600 text-sm sm:text-base">愛犬との大切な瞬間を記録しましょう</p>
         </div>
         {/* おたより投稿フォーム */}
-        <EntryForm dogs={dogs} />
+        <EntryForm dogs={dogs} initialType={initialType} />
         {/* 戻るリンク */}
         <div className="text-center mt-6">
           <Link href="/" className="text-pink-600 hover:text-pink-700 font-semibold">
@@ -131,5 +136,25 @@ export default function OtayoriNewPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+// ローディングフォールバック
+function OtayoriNewLoading() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">読み込み中...</p>
+      </div>
+    </div>
+  )
+}
+
+export default function OtayoriNewPage() {
+  return (
+    <Suspense fallback={<OtayoriNewLoading />}>
+      <OtayoriNewContent />
+    </Suspense>
   )
 }

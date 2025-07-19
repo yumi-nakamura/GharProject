@@ -76,6 +76,12 @@ export default function HealthReportPage() {
   const [showImageModal, setShowImageModal] = useState(false)
   const [modalImageUrl, setModalImageUrl] = useState<string>('')
   const [modalImageAlt, setModalImageAlt] = useState<string>('')
+  
+  // ページネーション用のstate
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalAnalysisCount, setTotalAnalysisCount] = useState(0)
+  const [itemsPerPage, setItemsPerPage] = useState(5)
 
   const fetchRecentPosts = useCallback(async (dogId: string) => {
     try {
@@ -123,7 +129,7 @@ export default function HealthReportPage() {
     }
   }, [deletedAnalysisOtayoriIds])
 
-  const fetchAnalysisHistory = useCallback(async (dogId: string) => {
+  const fetchAnalysisHistory = useCallback(async (dogId: string, page: number = 1) => {
     try {
       // まず、この犬に関連するotayori投稿のIDを取得
       const { data: otayoriPosts, error: otayoriError } = await supabase
@@ -140,10 +146,30 @@ export default function HealthReportPage() {
       
       if (otayoriIds.length === 0) {
         setAnalysisHistory([])
+        setTotalPages(1)
+        setTotalAnalysisCount(0)
         return
       }
       
-      // AI分析履歴を取得（otayori_idでフィルタリング）
+      // 総件数を取得
+      const { count: totalCount, error: countError } = await supabase
+        .from('ai_analysis')
+        .select('*', { count: 'exact', head: true })
+        .in('otayori_id', otayoriIds)
+        .not('otayori_id', 'is', null)
+      
+      if (countError) {
+        console.error('総件数取得エラー:', countError)
+        return
+      }
+      
+      setTotalAnalysisCount(totalCount || 0)
+      setTotalPages(Math.ceil((totalCount || 0) / itemsPerPage))
+      
+      // AI分析履歴を取得（otayori_idでフィルタリング、ページネーション対応）
+      const from = (page - 1) * itemsPerPage
+      const to = from + itemsPerPage - 1
+      
       const { data: history, error } = await supabase
         .from('ai_analysis')
         .select(`
@@ -160,7 +186,7 @@ export default function HealthReportPage() {
         .in('otayori_id', otayoriIds)
         .not('otayori_id', 'is', null)
         .order('created_at', { ascending: false })
-        .limit(10)
+        .range(from, to)
 
       if (error) {
         console.error('分析履歴取得エラー:', error)
@@ -173,15 +199,15 @@ export default function HealthReportPage() {
       console.error('分析履歴取得中にエラー:', error)
       setAnalysisHistory([])
     }
-  }, [])
+  }, [itemsPerPage])
 
   // 分析履歴を即座に更新する関数
   const refreshAnalysisHistory = useCallback(async () => {
     console.log('分析履歴更新開始:', { selectedDog: selectedDog?.id })
     if (selectedDog) {
-      await fetchAnalysisHistory(selectedDog.id)
+      await fetchAnalysisHistory(selectedDog.id, currentPage)
     }
-  }, [selectedDog, fetchAnalysisHistory])
+  }, [selectedDog, fetchAnalysisHistory, currentPage])
 
   // 画像モーダルを開く関数
   const openImageModal = useCallback((imageUrl: string, analysisType: string) => {
@@ -231,8 +257,10 @@ export default function HealthReportPage() {
         console.log('削除されたotayori_idを記録:', otayoriId)
       }
       
-      // 履歴を更新
-      await refreshAnalysisHistory()
+      // 履歴を更新（現在のページを維持）
+      if (selectedDog) {
+        await fetchAnalysisHistory(selectedDog.id, currentPage)
+      }
       
       // 最近の投稿を再取得（削除された画像が再度表示される）
       if (selectedDog) {
@@ -243,7 +271,7 @@ export default function HealthReportPage() {
     } catch (error) {
       console.error('分析結果削除エラー:', error)
     }
-  }, [refreshAnalysisHistory, selectedDog, fetchRecentPosts])
+  }, [selectedDog, fetchRecentPosts, currentPage, fetchAnalysisHistory])
 
   const analyzeHealthData = useCallback((posts: OtayoriPost[], period: string): HealthData => {
     const mealPosts = posts.filter(post => post.type === 'meal')
@@ -338,6 +366,7 @@ export default function HealthReportPage() {
         setDogs(data || [])
         if (data && data.length > 0) {
           setSelectedDog(data[0])
+          setCurrentPage(1) // ページをリセット
           fetchRecentPosts(data[0].id)
         }
       }
@@ -356,9 +385,10 @@ export default function HealthReportPage() {
 
   useEffect(() => {
     if (selectedDog) {
+      setCurrentPage(1) // 犬が変更されたらページをリセット
       fetchHealthData(selectedDog.id, selectedPeriod)
       fetchRecentPosts(selectedDog.id)
-      fetchAnalysisHistory(selectedDog.id)
+      fetchAnalysisHistory(selectedDog.id, 1)
     }
   }, [selectedDog, selectedPeriod, fetchHealthData, fetchRecentPosts, fetchAnalysisHistory])
 
@@ -723,10 +753,14 @@ export default function HealthReportPage() {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {analysisHistory.slice(0, 6).map((analysis) => {
+                  {analysisHistory.map((analysis) => {
                     const imageUrl = String((nullToUndefined(analysis.image_url) ?? nullToUndefined(analysis.otayori?.photo_url as string | null | undefined)) || '');
                     return (
-                      <div key={analysis.id} className="bg-white rounded-xl p-5 border border-blue-100 shadow-sm hover:shadow-md transition-shadow">
+                      <div 
+                        key={analysis.id} 
+                        id={`analysis-${analysis.id}`}
+                        className="bg-white rounded-xl p-5 border border-blue-100 shadow-sm hover:shadow-md transition-shadow"
+                      >
                         <div className="flex flex-col md:flex-row gap-4 items-start">
                           {/* 画像＋詳細情報 横並び */}
                           <div className="relative flex-shrink-0">
@@ -957,12 +991,12 @@ export default function HealthReportPage() {
                 <div className="mt-4 pt-4 border-t border-blue-200">
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
-                      <div className="text-lg font-bold text-blue-600">{analysisHistory.length}</div>
+                      <div className="text-lg font-bold text-blue-600">{totalAnalysisCount}</div>
                       <div className="text-xs text-gray-500">総分析回数</div>
                     </div>
                     <div>
                       <div className="text-lg font-bold text-green-600">
-                        {Math.round(analysisHistory.reduce((sum, a) => sum + a.health_score, 0) / analysisHistory.length)}
+                        {analysisHistory.length > 0 ? Math.round(analysisHistory.reduce((sum, a) => sum + a.health_score, 0) / analysisHistory.length) : 0}
                       </div>
                       <div className="text-xs text-gray-500">平均スコア</div>
                     </div>
@@ -974,6 +1008,105 @@ export default function HealthReportPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* ページネーション */}
+                {totalPages > 1 && (
+                  <div className="mt-6 pt-4 border-t border-blue-200">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-600">
+                        表示中: {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalAnalysisCount)} / {totalAnalysisCount} 件
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {/* 表示件数選択 */}
+                        <select
+                          value={itemsPerPage}
+                          onChange={(e) => {
+                            const newItemsPerPage = parseInt(e.target.value)
+                            setItemsPerPage(newItemsPerPage)
+                            setCurrentPage(1)
+                            if (selectedDog) {
+                              fetchAnalysisHistory(selectedDog.id, 1)
+                            }
+                          }}
+                          className="text-sm border border-gray-300 rounded px-2 py-1 bg-white"
+                        >
+                          <option value={3}>3件</option>
+                          <option value={5}>5件</option>
+                          <option value={10}>10件</option>
+                          <option value={15}>15件</option>
+                        </select>
+                        
+                        {/* ページネーションボタン */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => {
+                              if (currentPage > 1) {
+                                const newPage = currentPage - 1
+                                setCurrentPage(newPage)
+                                if (selectedDog) {
+                                  fetchAnalysisHistory(selectedDog.id, newPage)
+                                }
+                              }
+                            }}
+                            disabled={currentPage === 1}
+                            className="px-3 py-1 text-sm border border-gray-300 rounded bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            ←
+                          </button>
+                          
+                          {/* ページ番号 */}
+                          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                            let pageNum
+                            if (totalPages <= 5) {
+                              pageNum = i + 1
+                            } else if (currentPage <= 3) {
+                              pageNum = i + 1
+                            } else if (currentPage >= totalPages - 2) {
+                              pageNum = totalPages - 4 + i
+                            } else {
+                              pageNum = currentPage - 2 + i
+                            }
+                            
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => {
+                                  setCurrentPage(pageNum)
+                                  if (selectedDog) {
+                                    fetchAnalysisHistory(selectedDog.id, pageNum)
+                                  }
+                                }}
+                                className={`px-3 py-1 text-sm border rounded transition-colors ${
+                                  currentPage === pageNum
+                                    ? 'bg-blue-500 text-white border-blue-500'
+                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            )
+                          })}
+                          
+                          <button
+                            onClick={() => {
+                              if (currentPage < totalPages) {
+                                const newPage = currentPage + 1
+                                setCurrentPage(newPage)
+                                if (selectedDog) {
+                                  fetchAnalysisHistory(selectedDog.id, newPage)
+                                }
+                              }
+                            }}
+                            disabled={currentPage === totalPages}
+                            className="px-3 py-1 text-sm border border-gray-300 rounded bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            →
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1100,9 +1233,24 @@ export default function HealthReportPage() {
               imageUrl={selectedImageUrl}
               analysisType={selectedAnalysisType}
               otayoriId={selectedOtayoriId}
-              onAnalysisComplete={async () => {
-                // health-reportページでは保存ボタン押下時に直接保存されるため、
-                // ここでは何もしない（重複を防ぐため）
+              isHealthReportPage={true}
+              onSaveComplete={async (analysisId: string) => {
+                // モーダルを閉じる
+                setShowAIAnalysis(false)
+                
+                // 分析履歴を更新
+                await refreshAnalysisHistory()
+                
+                // 該当の分析カードにフォーカスするためのアンカーリンクを作成
+                const analysisCard = document.getElementById(`analysis-${analysisId}`)
+                if (analysisCard) {
+                  analysisCard.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                  // 一時的にハイライト効果を追加
+                  analysisCard.classList.add('ring-4', 'ring-blue-300', 'ring-opacity-50')
+                  setTimeout(() => {
+                    analysisCard.classList.remove('ring-4', 'ring-blue-300', 'ring-opacity-50')
+                  }, 3000)
+                }
               }}
             />
           </div>

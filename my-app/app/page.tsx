@@ -131,8 +131,12 @@ export default function HomePage() {
         }
       })
 
+      // communityページと同じルールでフィルタリング（poopタイプを除外）
+      const filteredPosts = posts.filter(post => post.type !== 'poop')
+
       console.log('結合後の投稿データ:', posts)
-      setCommunityPosts(posts)
+      console.log('フィルタリング後の投稿データ:', filteredPosts)
+      setCommunityPosts(filteredPosts)
     } catch (error) {
       console.error('コミュニティ投稿取得エラー:', error)
     }

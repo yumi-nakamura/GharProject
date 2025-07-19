@@ -5,8 +5,8 @@ export async function POST(request: NextRequest) {
   try {
     console.log('generate-comment API 開始')
     
-    const { imageUrl, type, dogName } = await request.json()
-    console.log('リクエストデータ:', { imageUrl, type, dogName })
+    const { imageUrl, type, dogName, tags } = await request.json()
+    console.log('リクエストデータ:', { imageUrl, type, dogName, tags })
 
     if (!imageUrl) {
       console.log('エラー: 画像URLがありません')
@@ -97,10 +97,12 @@ export async function POST(request: NextRequest) {
 
     // タイプに応じたプロンプトを設定
     const dogNameText = dogName || 'わんちゃん'
+    const tagsText = tags && tags.length > 0 ? `選択されたタグ: ${tags.join(', ')}` : ''
+    
     const typePrompts = {
-      meal: `この写真は愛犬${dogNameText}の食事の様子です。飼い主として、愛犬${dogNameText}が美味しそうに食べている姿を見て嬉しくなるような、温かく愛らしいコメントを生成してください。例：「${dogNameText}、今日も完食だね！おいしそうに食べてくれてママ（パパ）も嬉しいよ〜」「ごはんタイムが一番楽しそう！もっと食べる？でもお腹いっぱいかな？」など、飼い主の愛情が伝わる自然なコメントをお願いします。`,
-      poop: `この写真は愛犬${dogNameText}の排泄の様子です。飼い主として、愛犬${dogNameText}の健康を気遣いながらも、温かく見守るようなコメントを生成してください。例：「今日も元気にうんちできてるね！健康な証拠だよ〜」「お疲れ様！スッキリしたかな？ママ（パパ）も安心だよ」など、愛犬${dogNameText}の健康を喜ぶ飼い主の気持ちが伝わるコメントをお願いします。`,
-      emotion: `この写真は愛犬${dogNameText}の表情や様子です。飼い主として、愛犬${dogNameText}の可愛らしさや幸せそうな様子を見て心が癒されるような、愛情たっぷりのコメントを生成してください。例：「${dogNameText}、とっても楽しそうな表情だね！ママ（パパ）も見てて幸せ〜」「リラックスして気持ちよさそう！今日もいい子にしてくれてありがとう」など、愛犬${dogNameText}への愛情が溢れる自然なコメントをお願いします。`
+      meal: `この写真は愛犬${dogNameText}の食事の様子です。${tagsText ? `${tagsText}を参考に、` : ''}飼い主として、愛犬${dogNameText}が美味しそうに食べている姿を見て嬉しくなるような、温かく愛らしいコメントを生成してください。例：「${dogNameText}、今日も完食だね！おいしそうに食べてくれてママ（パパ）も嬉しいよ〜」「ごはんタイムが一番楽しそう！もっと食べる？でもお腹いっぱいかな？」など、飼い主の愛情が伝わる自然なコメントをお願いします。`,
+      poop: `この写真は愛犬${dogNameText}の排泄の様子です。${tagsText ? `${tagsText}を参考に、` : ''}飼い主として、愛犬${dogNameText}の健康を気遣いながらも、温かく見守るようなコメントを生成してください。例：「今日も元気にうんちできてるね！健康な証拠だよ〜」「お疲れ様！スッキリしたかな？ママ（パパ）も安心だよ」など、愛犬${dogNameText}の健康を喜ぶ飼い主の気持ちが伝わるコメントをお願いします。`,
+      emotion: `この写真は愛犬${dogNameText}の表情や様子です。${tagsText ? `${tagsText}を参考に、` : ''}飼い主として、愛犬${dogNameText}の可愛らしさや幸せそうな様子を見て心が癒されるような、愛情たっぷりのコメントを生成してください。例：「${dogNameText}、とっても楽しそうな表情だね！ママ（パパ）も見てて幸せ〜」「リラックスして気持ちよさそう！今日もいい子にしてくれてありがとう」など、愛犬${dogNameText}への愛情が溢れる自然なコメントをお願いします。`
     }
 
     const prompt = typePrompts[type as keyof typeof typePrompts]

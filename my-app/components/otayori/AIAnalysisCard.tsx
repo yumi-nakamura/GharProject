@@ -11,6 +11,8 @@ interface AIAnalysisCardProps {
   analysisType: 'poop' | 'meal' | 'emotion';
   otayoriId?: string;
   onAnalysisComplete?: (analysis: DogImageAnalysis) => void;
+  onSaveComplete?: (analysisId: string) => void;
+  isHealthReportPage?: boolean;
 }
 
 // 画像をBase64エンコードする関数
@@ -166,7 +168,8 @@ export default function AIAnalysisCard({
   imageUrl, 
   analysisType, 
   otayoriId,
-  onAnalysisComplete 
+  onAnalysisComplete,
+  onSaveComplete
 }: AIAnalysisCardProps) {
   const [analysis, setAnalysis] = useState<DogImageAnalysis | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -255,13 +258,16 @@ export default function AIAnalysisCard({
         throw new Error('認証が必要です');
       }
 
-              // 既存の分析結果があるかチェック
-        if (otayoriId) {
-          const { data: existingAnalysis } = await supabase
-            .from('ai_analysis')
-            .select('id')
-            .eq('otayori_id', otayoriId)
-            .single();
+      // 保存処理
+      let savedAnalysisId: string | undefined;
+      
+      if (otayoriId) {
+        // 既存の分析結果があるかチェック
+        const { data: existingAnalysis } = await supabase
+          .from('ai_analysis')
+          .select('id')
+          .eq('otayori_id', otayoriId)
+          .single();
 
         if (existingAnalysis) {
           // 既存の分析結果がある場合は更新
@@ -288,6 +294,7 @@ export default function AIAnalysisCard({
 
           console.log('健康レポートに更新成功:', updatedAnalysis);
           setIsSaved(true);
+          savedAnalysisId = updatedAnalysis?.id;
         } else {
           // 新規保存
           const { data: savedAnalysis, error: saveError } = await supabase
@@ -314,6 +321,7 @@ export default function AIAnalysisCard({
 
           console.log('健康レポートに保存成功:', savedAnalysis);
           setIsSaved(true);
+          savedAnalysisId = savedAnalysis?.id;
         }
       } else {
         // otayori_idがない場合は新規保存
@@ -341,17 +349,18 @@ export default function AIAnalysisCard({
 
         console.log('健康レポートに保存成功:', savedAnalysis);
         setIsSaved(true);
+        savedAnalysisId = savedAnalysis?.id;
       }
       
-      // 保存成功時にコールバックを呼ぶ（timelineページ用）
-      if (onAnalysisComplete) {
+
+      
+      // 保存完了時のコールバック処理
+      if (onSaveComplete && savedAnalysisId) {
+        onSaveComplete(savedAnalysisId);
+      } else if (onAnalysisComplete) {
+        // フォールバック: 従来のコールバック
         onAnalysisComplete(analysis);
       }
-      
-      // 3秒後に保存完了メッセージを消す
-      setTimeout(() => {
-        setIsSaved(false);
-      }, 3000);
 
     } catch (err) {
       console.error('保存エラー:', err);
